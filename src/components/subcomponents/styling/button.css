@@ -1,0 +1,21 @@
+.action {
+    font-size: 20px;
+    width: 200px;
+    height: 200px;
+}
+
+.small {
+    font-size: 20px;
+    width: inherit;
+    height: inherit;
+}
+
+.close {
+    font-size: 20px;
+    position: absolute;
+    bottom: 25px;
+    left: calc(50% - 200px/2);
+    padding: 20px;
+    width: 200px;
+    height: 100px;
+}
