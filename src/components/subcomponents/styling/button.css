@@ -19,3 +19,25 @@
     width: 200px;
     height: 100px;
 }
+
+.cell {
+    font-size: 30px;
+    width: 16%;
+}
+
+.pick-menu {
+    font-size: 30px;
+    padding: 20px;
+}
+
+button:focus:not(:focus-visible) {
+    outline: none; /* Remove the outline for mouse and touch interaction */
+  }
+  
+button:focus-visible {
+    outline: 2px solid blue; /* Apply a custom focus outline for keyboard navigation */
+}
+
+.none {
+    display: none;
+}

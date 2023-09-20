@@ -4,6 +4,8 @@ import Menu from './valuesMenu.jsx';
 import file from '../../lib/file.js'
 import time from '../../lib/time.js'
 import './styling/employee.css'
+import MachineDisplay from './machineDisplay.jsx';
+import MachineActions from './machineActions.jsx';
 
 //change
 const curPath = 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private'
@@ -22,11 +24,12 @@ class machineValues extends Component {
             },
         ],
         buttons: [
-            {id: 0, text: "Change Machine"},
+            {id: 0, class: 'small', text: "Change Machine"},
         ]
     }
     componentDidMount() {
         this.updateTextForMenu();
+        file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", "Macro" + '\t' + "null")
     }
     updateTextForMenu = () => {
         const machineMenu = this.renderMachineMenu();
@@ -87,6 +90,7 @@ class machineValues extends Component {
             this.setState({ Machine: newMachine }, () => {
                 this.updateTextForMenu();
             });
+            return true;
         }
         else {
             alert("Machine not found!")
@@ -111,7 +115,7 @@ class machineValues extends Component {
         const machineMenu = files.map(file => {
             const machineObj = obj.get(curPath + '\\local files\\machine\\' + file);
             const machine = machineObj["Machine"];
-            return (<div onClick={() => this.switchMachine(file)}>{machine}</div>)
+            return (<div onClick={() => this.switchMachine(file)}>{machine}</div>);
         });
         return (
             <div>
@@ -125,6 +129,35 @@ class machineValues extends Component {
             </div>
         );
     }
+
+    //--saving for actions
+    saveProps = (propsArray, valuesArray) => {
+        var machine = this.state.Machine;
+        for (let i = 0; i < propsArray.length; i++) {
+            if(Array.isArray(valuesArray[i])) {
+                if (machine[propsArray[i]] == "null" || machine[propsArray[i]] == undefined) {
+                    machine[propsArray[i]] = valuesArray[i]
+                }
+                else if(Array.isArray(machine[propsArray[i]])) {
+                    for (let j = 0; j < valuesArray[i].length; j++) {
+                        machine[propsArray[i]].push(valuesArray[i][j]);
+                    }
+                }
+                else {
+                    valuesArray[i].splice(0, 0, machine[propsArray[i]]);
+                    machine[propsArray[i]] = valuesArray[i];
+                }
+            }
+            else {
+                machine[propsArray[i]] = valuesArray[i];
+            }
+        }
+        this.setState({ Machine: machine }, () => {
+            this.save(machine, curPath + '\\local files\\machine\\machine.txt');
+            console.log(machine);
+        });
+    }
+
     render() {
         const machine = this.state.Machine;
         return (
@@ -138,6 +171,9 @@ class machineValues extends Component {
                 /><br></br>
                 Status<br></br>
                 {machine["Status"]}
+                <br></br>
+                <MachineDisplay Machine={this.state.Machine}/>
+                <MachineActions createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine}/>
             </h2>
         );
     }

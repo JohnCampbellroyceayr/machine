@@ -22,7 +22,7 @@ class employeeValues extends Component {
             },
         ],
         buttons: [
-            {id: 0, text: "Change Employee"},
+            {id: 0, class: 'small', text: "Change Employee"},
         ]
     }
     componentDidMount() {

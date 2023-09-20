@@ -19,7 +19,7 @@ class menu extends Component {
     addOnclickToButtons = () => {
         const buttons = [...this.state.buttons];
         for (let i = 0; i < buttons.length; i++) {
-            buttons[i].onclick = () => {this.openMenu(0)};
+            buttons[i].onclick = () => {this.openMenu(i)};
             // buttons[i].class = "small";
         }
         this.setState({ buttons: buttons });
@@ -30,6 +30,10 @@ class menu extends Component {
             const menus = [...prevState.menus];
             menus[id].hidden = newDisplay;
             return { menus: menus };
+        }, () => {
+            if(this.state.menus[id].ref != undefined) {
+                this.props.menus[id].ref.current.focus();
+            }
         });
     }
     renderMenu = () => {
