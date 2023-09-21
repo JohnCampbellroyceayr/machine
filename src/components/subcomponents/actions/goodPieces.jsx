@@ -1,28 +1,27 @@
 import React, { Component } from 'react';
 import Menu from '../valuesMenu.jsx';
-
 class GoodPieces extends Component {
     state = {
         menus: [
             {id: 0, text: null, class: 'default', hidden: true, ref: React.createRef()},
-            {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef(), ref2: React.createRef()},
+            {id: 1, text: null, class: 'default', hidden: true},
+            {id: 2, text: null, class: 'default', hidden: true, ref: React.createRef()},
         ],
         buttons: [
             {id: 0, class: 'action', text: "Good Pieces"},
             {id: 1, class: 'none', text: "Yes"},
+            {id: 2, class: 'none', text: "Yes"},
         ],
         setupMenus: [
         ],
         setupButtons: [
         ],
         oneOrder: null,
-        jobs: [],
-        seq: [],
-        oldJobIndex: []
+        jobIndex: [],
+        numPieces: 0,
     }
     componentDidUpdate(prevProps) {
         if (prevProps !== this.props) {
-            console.log("adf");
             this.updateMenus();
         }
     }
@@ -38,7 +37,7 @@ class GoodPieces extends Component {
         });
     }
     renderChooseNumberOfJobsMenu = (index) => {
-        const text = (<h2>Do you want to run more than 1 job? Enter = No </h2>);
+        const text = (<h2>Do you want to scan good pieces of more than 1 job? Enter = No </h2>);
         const buttons = (
             <>
                 <button className='pick-menu' onClick={() => this.showrenderOrderMenu(false, 1)}>Yes</button>
@@ -56,9 +55,17 @@ class GoodPieces extends Component {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[index].hidden = false;
-            return { menus: menus, oneOrder: bool, jobs: [], seq: [], oldJobIndex: []};
-        }, () => {
-            this.state.menus[index].ref.current.focus();
+            return { menus: menus, oneOrder: bool, jobIndex: []};
+        });
+    }
+    showMenu = (index) => {
+        this.setState(prevState => {
+            const menus = [...prevState.menus];
+            menus.forEach(menu => {
+                menu.hidden = true;
+            });
+            menus[index].hidden = false;
+            return { menus: menus};
         });
     }
     renderOrderMenu(index) {
@@ -66,95 +73,136 @@ class GoodPieces extends Component {
 
         const jobs = (machineJobs.length == 0 || machineJobs == "null" || machineJobs == undefined) ? '' : machineJobs.map((job, i) => {
             const ref = React.createRef();
+            const numPieces = this.getNumPieces(i);
             const onclick = () => {
-                this.enterOldToRun(i, ref);
+                this.menuToSelectPieces(i);
             };
-            return <button key={i} className='pick-menu' onClick={onclick} ref={ref}>{job}</button>
+            return <button key={i} className='pick-menu' onClick={onclick} ref={ref}>{job}{" "}{numPieces}</button>
         });
-        const inputOrder = (<input type='text' placeholder='order' onKeyDown={(e) => this.setupKeyPress(e, "order")} ref={this.state.menus[index].ref}></input>);
-        const inputSeq = (<input type='text' placeholder='seq' onKeyDown={(e) => this.setupKeyPress(e, "seq")} ref={this.state.menus[index].ref2}></input>);
-        const enterBtn = (<button className='pick-menu' onClick={() => this.run()}>Run</button>);
+        const enterBtn = (<button className='pick-menu' onClick={() => this.scanGoodPieces()}>Scan Good Pieces</button>);
         const html = (
             <div>
                 Select job:<br></br>
                 {jobs}<br></br>
-                Or enter new job:<br></br>
-                Order number:<br></br>
-                {inputOrder}<br></br>
-                Sequence:<br></br>
-                {inputSeq}<br></br>
                 {enterBtn}
             </div>
         )
         return html;
     }
-    setupKeyPress = (e, type) => {
+    getNumPieces = (index) => {
+        const jobs = this.state.jobIndex;
+        for (let i = 0; i < jobs.length; i++) {
+            const job = jobs[i];
+            if (job.index == index) {
+                return "Pieces: " + job.value;
+            }
+        }
+        return '';
+    }
+    piecesMenuKeyPress = (e) => {
         if (e.keyCode === 13) {
-            this.enterJob(e.target.value, type);
+            // this.enterJob(e.target.value, type);
+            console.log("object");
         }
     }
-    enterOldToRun = (index, btnRef) => {
+    handleChangePiecesMenu = (event, index) => {
+        if (event.keyCode === 13) {
+           this.enterToRun(event.target.value, index);
+        }
+    }
+    menuToSelectPieces = (orderIndex) => {
+        const machineJobs = (Array.isArray(this.props.jobs)) ? this.props.jobs : [this.props.jobs];
+        const numPiecesMenuIndex = 2;
+        const defaultNumber = this.getDefault(orderIndex);
         this.setState(prevState => {
-            const indexArray = [...prevState.oldJobIndex]
-            if (indexArray.includes(index)) {
-                for (let j = 0; j < indexArray.length; j++) {
-                    if(indexArray[j] == index) {
-                        indexArray.splice(j, 1);
-                    }                    
-                }
-                btnRef.current.style.backgroundColor = '';
+            const menus = prevState.menus;
+            menus[numPiecesMenuIndex].text = [];
+            return { menus: menus };
+        }, () => {
+            const order = machineJobs[orderIndex];
+            const inputOrder = (<input type='number' defaultValue={defaultNumber} placeholder='number of pieces' onKeyDown={(e) => this.handleChangePiecesMenu(e, orderIndex)} ref={this.state.menus[numPiecesMenuIndex].ref}></input>);
+            const backBtn = (<button className='pick-menu' onClick={() => this.showMenu(1)}>Back</button>);
+            const html = (
+                <>
+                    {order}<br></br>
+                    {inputOrder}<br></br><br></br>
+                    {backBtn}<br></br>
+                </>
+            );
+            this.setState(prevState => {
+                const menus = [...prevState.menus];
+                menus[numPiecesMenuIndex].text = html;
+                menus[numPiecesMenuIndex].hidden = false;
+                return { menus: menus };
+            }, () => {
+                this.state.menus[numPiecesMenuIndex].ref.current.focus();
+            });
+        });
+    }
+    getDefault = (index) => {
+        if (Array.isArray(this.props.jobs)) {
+            const needed = this.props.requiredPieces[index];
+            const current = this.props.goodPieces[index];
+            return needed - current;
+        }
+        else {
+            if (this.props.requiredPieces == "null" || this.props.requiredPieces == undefined) {
+                return 0;
             }
             else {
-                indexArray.push(index);
-                btnRef.current.style.backgroundColor = "red";
+                const needed = this.props.requiredPieces;
+                const current = this.props.goodPieces;
+                return needed - current;
             }
-            return { oldJobIndex: indexArray };
-        }, () => {
+        }
+    }
+    enterToRun = (value, index) => {
+        const currentValues = this.state.jobIndex;
+        for (let i = 0; i < currentValues.length; i++) {
+            const indexValue = currentValues[i].index;
+            if (index == indexValue) {
+                currentValues.splice(i, 1);
+                break;
+            }
+        }
+        currentValues.push({index: index, value: value});
+        this.setState({ jobIndex: currentValues }, () => {
             if (this.state.oneOrder == true) {
-                this.run();
+                this.scanGoodPieces();
+            }
+            else {
+                this.updateMenus();
+                this.showMenu(1);
             }
         });
     }
-    enterJob = (value, type) => {
-        if (type == "order") {
-            if(value != "") {
-                this.state.menus[1].ref2.current.focus();
-            }
-            else {
-                this.run();
-            }
-        }
-        else {
-            this.setState(prevState => {
-                const jobs = [...prevState.jobs];
-                const seq = [...prevState.seq];
-                jobs.push(this.state.menus[1].ref.current.value);
-                seq.push(this.state.menus[1].ref2.current.value);
-                return { jobs: jobs, seq: seq };
-            }, () => {
-                this.state.menus[1].ref.current.value = "";
-                this.state.menus[1].ref2.current.value = "";
-                this.state.menus[1].ref.current.focus();
-                if (this.state.oneOrder) {
-                    this.run();
-                }
-            });
-        }
-    }
-    run = () => {
+    scanGoodPieces = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].hidden = true;
             menus[1].hidden = true;
+            menus[2].hidden = true;
             return { menus: menus };
         });
-        this.props.run(this.state.jobs, this.state.seq, this.state.oldJobIndex);
+
+        const jobs = this.state.jobIndex;
+        console.log(jobs);
+        let jobArray = [];
+        let piecesArray = [];
+        for (let i = 0; i < jobs.length; i++) {
+            jobArray.push(jobs[i].index);
+            piecesArray.push(jobs[i].value);
+        }
+        console.log(jobArray);
+        console.log(piecesArray);
+        this.props.scanGoodPieces(jobArray, piecesArray);
     }
     render() { 
         return (
             <Menu 
                 menus={this.state.menus}
                 buttons={this.state.buttons}
+                numPieces={this.state.numPieces}
             />
         );
     }

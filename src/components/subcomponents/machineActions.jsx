@@ -8,6 +8,7 @@ import Run from './actions/run.jsx';
 import Pause from './actions/pause.jsx';
 import Play from './actions/play.jsx';
 import GoodPieces from './actions/goodPieces.jsx';
+import Scrap from './actions/scrap.jsx';
 
 //change
 const curPath = 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private'
@@ -68,9 +69,33 @@ class Actions extends Component {
     pause = () => {
         let macroFileText = "Macro" + '\t' + "Pause" + '\n';
         file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", macroFileText);
+        this.props.saveProps([], []);
     }
     play = () => {
         let macroFileText = "Macro" + '\t' + "Resume" + '\n';
+        file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", macroFileText);
+        this.props.saveProps([], []);
+    }
+    scanGoodPieces = (orders, pieces) => {
+        this.props.saveProps([], []);
+        let orderString = "";
+        let piecesString = "";
+        for (let i = 0; i < orders.length; i++) {
+            const order = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][orders[i]] : this.props.Machine["Jobs"];
+            const numpieces = pieces[i];
+            orderString += '\t' + order;
+            piecesString += '\t' + numpieces;
+        }
+        let macroFileText = "Macro" + '\t' + "GoodPieces" + '\n';
+        macroFileText += "Order" + orderString + '\n';
+        macroFileText += "Pieces" + piecesString + '\n';
+        file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", macroFileText);
+    }
+    scanScrap = (order, pieces) => {
+        this.props.saveProps([], []);
+        let macroFileText = "Macro" + '\t' + "Scrap" + '\n';
+        macroFileText += "Order" + '\t' + order + '\n';
+        macroFileText += "Pieces" + '\t' + pieces + '\n';
         file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", macroFileText);
     }
     render() { 
@@ -81,7 +106,8 @@ class Actions extends Component {
             <Run run={this.run} jobs={this.props.Machine["Jobs"]}/>
             <Pause machine={this.props.Machine} pause={this.pause}/>
             <Play play={this.play}/>
-            <GoodPieces />
+            <GoodPieces jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces}/>
+            <Scrap jobs={this.props.Machine["Jobs"]} scanScrap={this.scanScrap}/>
             <br></br>
             {/* <Menu 
                 menus={this.state.menus}

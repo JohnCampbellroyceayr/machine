@@ -22,7 +22,6 @@ class Setup extends Component {
     }
     componentDidUpdate(prevProps) {
         if (prevProps !== this.props) {
-            console.log("adf");
             this.updateMenus();
         }
     }
