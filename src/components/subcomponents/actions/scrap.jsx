@@ -26,11 +26,18 @@ class Scrap extends Component {
     componentDidMount() {
         this.updateMenus();
     }
+    componentDidUpdate(prevProps) {
+        if (prevProps.status != this.props.status) {
+            this.updateMenus();
+        }
+    }
     updateMenus = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].text = this.renderOrderMenu(0);
-            return { menus: menus };
+            const buttons = [...prevState.buttons];
+            buttons[0].disabled = (this.props.status == "Working") ? false : true;
+            return { menus: menus, buttons: buttons};
         });
     }
     showrenderOrderMenu = (bool, index) => {

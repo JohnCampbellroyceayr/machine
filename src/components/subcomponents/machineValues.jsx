@@ -2,19 +2,16 @@ import React, { Component } from 'react';
 import obj from '../../lib/textFileObj.js';
 import Menu from './valuesMenu.jsx';
 import file from '../../lib/file.js'
-import time from '../../lib/time.js'
+import Time from '../../lib/time.js'
 import './styling/employee.css'
 import MachineDisplay from './machineDisplay.jsx';
 import MachineActions from './machineActions.jsx';
 
-//change
-const curPath = 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private'
-const curPathServer = '\\\\192.168.0.13\\Engdrawing\\Inspection Logs\\Scanning Files'
-//change
+import filePath from '../../lib/fileLocations.js';
 
 class machineValues extends Component {
     state = {
-        Machine: obj.get('C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private\\local files\\machine\\machine.txt'),
+        Machine: obj.get(filePath("machineLocal")),
         menus: [
             {
                 id: 0, 
@@ -29,7 +26,7 @@ class machineValues extends Component {
     }
     componentDidMount() {
         this.updateTextForMenu();
-        file.createFile(curPath + "\\local files\\machine\\machine-data-macro.txt", "Macro" + '\t' + "null")
+        file.createFile(filePath("machineMacro"), "Macro" + '\t' + "null");
     }
     updateTextForMenu = () => {
         const machineMenu = this.renderMachineMenu();
@@ -64,15 +61,15 @@ class machineValues extends Component {
 
     switchMachine = (fileName) => {
         this.saveCurrentMachine();
-        const newMachine = obj.get(curPath + '\\local files\\machine\\' + fileName);
-        this.save(newMachine, curPath + '\\local files\\machine\\machine.txt');
+        const newMachine = obj.get(filePath("machineLocalDir") + fileName);
+        this.save(newMachine, filePath("machineLocal"));
         this.setState({ Machine: newMachine }, () => {
             this.updateTextForMenu();
         });
     }
     createNewMachine = (Machine) => {
         const depRes = Machine.split(" ");
-        const machineGroup = obj.findMachineGroup(curPathServer + '\\machines\\MachineGroups.txt', "DFT" + depRes[0], depRes[1]);
+        const machineGroup = obj.findMachineGroup(filePath("machineGroup"), "DFT" + depRes[0], depRes[1]);
         if (machineGroup !== false) {
             this.saveCurrentMachine();
             let newMachine = {};
@@ -86,9 +83,16 @@ class machineValues extends Component {
             newMachine["GoodPieces"] = "null";
             newMachine["PiecesNeeded"] = "null";
             newMachine["ReportingSequence"] = "null";
-            this.save(newMachine, curPath + '\\local files\\machine\\machine.txt');
+            this.save(newMachine, filePath("machineLocal"));
             this.setState({ Machine: newMachine }, () => {
                 this.updateTextForMenu();
+                const macroFileText = "Macro" + '\t' + "Start Shift";
+                file.createFile(filePath("machineMacro"), macroFileText);
+
+                const employee = obj.get(filePath("employeeLocal"))["Number"];
+                const machine = this.state.Machine["Machine"];
+                const writeString = employee + '\t' + "Started on" + '\t' + machine + '\t' + Time.getDateTime();
+                file.addToFile(filePath("employeeLog"), writeString);
             });
             return true;
         }
@@ -107,13 +111,13 @@ class machineValues extends Component {
     }
     saveCurrentMachine = () => {
         const fileName = this.state.Machine["Machine"] + ".txt";
-        this.save(this.state.Machine, curPath + '\\local files\\machine\\' + fileName);
+        this.save(this.state.Machine, filePath("machineLocalDir") + fileName);
     }
     
     renderMachineMenu() {
-        const files = this.filterFileNames(file.getFileNames(curPath + '\\local files\\machine'));
+        const files = this.filterFileNames(file.getFileNames(filePath("machineLocalDir")));
         const machineMenu = files.map(file => {
-            const machineObj = obj.get(curPath + '\\local files\\machine\\' + file);
+            const machineObj = obj.get(filePath("machineLocalDir") + file);
             const machine = machineObj["Machine"];
             return (<div onClick={() => this.switchMachine(file)}>{machine}</div>);
         });
@@ -153,11 +157,22 @@ class machineValues extends Component {
             }
         }
         this.setState({ Machine: machine }, () => {
-            this.save(machine, curPath + '\\local files\\machine\\machine.txt');
+            this.save(machine, filePath("machineLocal"));
             console.log(machine);
         });
     }
-
+    changeStatus = (newStatus) => {
+        if (newStatus !== this.state.Machine["Status"]) {
+            this.setState(prevState => {
+                const machine = prevState.Machine;
+                machine["Status"] = newStatus;
+                return { Machine: prevState.Machine };
+            }, () => {
+                this.saveCurrentMachine();
+                console.log(this.state.Machine["Status"]);
+            });
+        }
+    }
     render() {
         const machine = this.state.Machine;
         return (
@@ -173,7 +188,7 @@ class machineValues extends Component {
                 {machine["Status"]}
                 <br></br>
                 <MachineDisplay Machine={this.state.Machine}/>
-                <MachineActions createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine}/>
+                <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine}/>
             </h2>
         );
     }

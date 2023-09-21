@@ -2,17 +2,15 @@ import React, { Component } from 'react';
 import obj from '../../lib/textFileObj.js';
 import Menu from './valuesMenu.jsx';
 import file from '../../lib/file.js'
-import time from '../../lib/time.js'
+import Time from '../../lib/time.js'
 import './styling/employee.css'
 
-//change
-const curPath = 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private'
-const curPathServer = '\\\\192.168.0.13\\Engdrawing\\Inspection Logs\\Scanning Files'
-//change
+import filePath from '../../lib/fileLocations.js';
+
 
 class employeeValues extends Component {
     state = {
-        Employee: obj.get(curPath + '\\local files\\employee\\employee.txt'),
+        Employee: obj.get(filePath("employeeLocal")),
         menus: [
             {
                 id: 0, 
@@ -52,29 +50,36 @@ class employeeValues extends Component {
 
     switchEmployee = (fileName) => {
         this.saveCurrentEmployee();
-        const newEmployee = obj.get(curPath + '\\local files\\employee\\' + fileName);
-        this.save(newEmployee, curPath + '\\local files\\employee\\employee.txt');
+        const newEmployee = obj.get(filePath("employeeLocalDir") + fileName);
+        this.save(newEmployee, filePath("employeeLocal"));
         this.setState({ Employee: newEmployee }, () => {
             this.updateTextForMenu();
         });
     }
     //asdf
     createNewEmployee = (employeeNumber) => {
-        const employeeName = obj.findNameValue(curPathServer + '\\employees\\EmployeeList.txt', employeeNumber);
+        const employeeName = obj.findNameValue(filePath("employeeList"), employeeNumber);
         if (employeeName !== false) {
             this.saveCurrentEmployee();
             let newEmployee = {};
             newEmployee["Number"] = employeeNumber;
             newEmployee["Name"] = employeeName;
             newEmployee["Status"] = "Working";
-            newEmployee["LastChanged"] = time.getTime();
-            this.save(newEmployee, curPath + '\\local files\\employee\\employee.txt');
+            newEmployee["LastChanged"] = Time.getTime();
+            this.save(newEmployee, filePath("employeeLocal"));
+            const employee = newEmployee["Number"];
+
+            const machine = obj.get(filePath("machineLocal"))["Machine"];
+            let writeString = employee + '\t' + "Start Shift" + '\t' + Time.getDateTime();
+            writeString = employee + '\t' + "Started on" + '\t' + machine + '\t' + Time.getDateTime() + '\n' + writeString;
+            file.addToFile(filePath("employeeLog"), writeString);
+
             this.setState({ Employee: newEmployee }, () => {
                 this.updateTextForMenu();
             });
         }
         else {
-            alert("Employee Number not found!")
+            alert("Employee Number not found!");
         }
     }
     filterFileNames = (files) => {
@@ -88,13 +93,13 @@ class employeeValues extends Component {
     }
     saveCurrentEmployee = () => {
         const fileName = this.state.Employee["Number"] + ".txt";
-        this.save(this.state.Employee, curPath + '\\local files\\employee\\' + fileName);
+        this.save(this.state.Employee, filePath("employeeLocalDir") + fileName);
     }
     
     renderEmployeeMenu() {
-        const files = this.filterFileNames(file.getFileNames(curPath + '\\local files\\employee'));
+        const files = this.filterFileNames(file.getFileNames(filePath("employeeLocalDir")));
         const employeeMenu = files.map(file => {
-            const employeeObj = obj.get(curPath + '\\local files\\employee\\' + file);
+            const employeeObj = obj.get(filePath("employeeLocalDir") + file);
             const number = employeeObj["Number"];
             const name = employeeObj["Name"];
             return (<div onClick={() => this.switchEmployee(file)}>{number}{" "}{name}</div>)

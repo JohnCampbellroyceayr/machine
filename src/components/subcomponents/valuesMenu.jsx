@@ -9,7 +9,7 @@ class menu extends Component {
     }
     componentDidUpdate(prevProps) {
         if (prevProps !== this.props) {
-            this.setState({ menus: this.props.menus });
+            this.setState({ menus: this.props.menus, buttons: this.props.buttons });
             this.addOnclickToButtons();
         }
     }

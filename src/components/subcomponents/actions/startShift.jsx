@@ -13,11 +13,18 @@ class StartShift extends Component {
     componentDidMount() {
         this.updateTextMenus();
     }
+    componentDidUpdate(prevProps) {
+        if (prevProps.status != this.props.status) {
+            this.updateTextMenus();
+        }
+    }
     updateTextMenus = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].text = this.renderStartShiftMenu(0);
-            return { menus: menus };
+            const buttons = [...prevState.buttons];
+            buttons[0].disabled = (this.props.status == "null") ? false : true;
+            return { menus: menus, buttons: buttons};
         });
     }
     renderStartShiftMenu = (index) => {

@@ -22,6 +22,15 @@ class file {
             }
         });
     }
+    static addToFile(path, newline) {
+        try {
+          const content = fs.readFileSync(path, 'utf8');
+          const updatedContent = newline + '\n' + content;
+          fs.writeFileSync(path, updatedContent, 'utf8');
+        } catch (error) {
+          console.error('Error adding line to file:', error);
+        }
+      }
 }
 
 export default file;
