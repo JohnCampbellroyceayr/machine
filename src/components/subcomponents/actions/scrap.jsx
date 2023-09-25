@@ -6,10 +6,12 @@ class Scrap extends Component {
         menus: [
             {id: 0, text: null, class: 'default', hidden: true},
             {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef()},
+            {id: 2, text: null, class: 'default', hidden: true, ref: React.createRef()},
         ],
         buttons: [
             {id: 0, class: 'action', text: "Scrap"},
             {id: 1, class: 'none', text: "Yes"},
+            {id: 2, class: 'none', text: "Yes"},
         ],
         setupMenus: [
         ],
@@ -17,6 +19,8 @@ class Scrap extends Component {
         ],
         jobIndex: [],
         numPieces: 0,
+        value: 0,
+        index: 0
     }
     componentDidUpdate(prevProps) {
         if (prevProps !== this.props) {
@@ -35,6 +39,7 @@ class Scrap extends Component {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].text = this.renderOrderMenu(0);
+            menus[2].text = this.renderNoReportReason(2);
             const buttons = [...prevState.buttons];
             buttons[0].disabled = (this.props.status == "Working") ? false : true;
             return { menus: menus, buttons: buttons};
@@ -55,6 +60,10 @@ class Scrap extends Component {
             });
             menus[index].hidden = false;
             return { menus: menus};
+        }, () => {
+            if (index == 2) {
+                this.state.menus[index].ref.current.focus();
+            }
         });
     }
     renderOrderMenu(index) {
@@ -76,6 +85,15 @@ class Scrap extends Component {
         )
         return html;
     }
+    renderNoReportReason(index) {
+        return (
+            <div>
+                Enter Reason for scrap:
+                <input type='text' placeholder='Reason for scrap' ref={this.state.menus[index].ref} onKeyDown={(e) => this.handleScrapReason(e)} />
+            </div>
+        );
+    }
+    
     getNumPieces = (index) => {
         const jobs = this.state.jobIndex;
         for (let i = 0; i < jobs.length; i++) {
@@ -97,14 +115,36 @@ class Scrap extends Component {
            this.enterToRun(event.target.value, index);
         }
     }
+    handleScrapReason = (event) => {
+        console.log("Asdf");
+        if (event.keyCode === 13) {
+            this.enterToRunNoReport(event.target.value);
+        }
+    }
     enterToRun = (value, index) => {
+        if(this.props.report[index] == "Y") {
+            this.setState(prevState => {
+                const menus = [...prevState.menus];
+                menus[0].hidden = true;
+                menus[1].hidden = true;
+                return { menus: menus };
+            });
+            this.props.scanScrap(index, value);
+        }
+        else {
+            this.setState({ value: value, index: index });
+            this.showMenu(2);
+        }
+    }
+    enterToRunNoReport = (reason) => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].hidden = true;
             menus[1].hidden = true;
+            menus[2].hidden = true;
             return { menus: menus };
         });
-        this.props.scanScrap(index, value);
+        this.props.scanScrap(this.state.index, this.state.value, reason.replaceAll(" ", "-"));
     }
     menuToSelectPieces = (orderIndex) => {
         const machineJobs = (Array.isArray(this.props.jobs)) ? this.props.jobs : [this.props.jobs];

@@ -23,6 +23,7 @@ class Actions extends Component {
         const macroFileText = "Macro" + '\t' + "Setup";
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.changeStatus("Working");
+        window.close();
     }
     run = (jobs, seq, indexArray) => {
         if (jobs.length != 0) {
@@ -43,12 +44,14 @@ class Actions extends Component {
         macroFileText += "Order" + orderString + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.changeStatus("Working");
+        window.close();
     }
     pause = () => {
         let macroFileText = "Macro" + '\t' + "Pause" + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.saveProps([], []);
         this.props.changeStatus("Paused");
+        window.close();
     }
     play = () => {
         let macroFileText = "Macro" + '\t' + "Resume" + '\n';
@@ -60,6 +63,7 @@ class Actions extends Component {
         else {
             this.props.changeStatus("Idle");
         }
+        window.close();
     }
     scanGoodPieces = (orders, pieces) => {
         this.props.saveProps([], []);
@@ -75,14 +79,19 @@ class Actions extends Component {
         macroFileText += "Order" + orderString + '\n';
         macroFileText += "Pieces" + piecesString + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
+        window.close();
     }
-    scanScrap = (order, pieces) => {
+    scanScrap = (order, pieces, reason) => {
         const orderString = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][order] : this.props.Machine["Jobs"];
         this.props.saveProps([], []);
         let macroFileText = "Macro" + '\t' + "Scrap" + '\n';
         macroFileText += "Order" + '\t' + orderString + '\n';
         macroFileText += "Pieces" + '\t' + pieces + '\n';
+        if (reason != undefined) {
+            macroFileText += "Reason" + '\t' + reason + '\n';
+        }
         file.createFile(filePath("machineMacro"), macroFileText);
+        window.close();
     }
     render() { 
         return (
@@ -93,7 +102,7 @@ class Actions extends Component {
                 <Pause machine={this.props.Machine} pause={this.pause} status={this.props.Machine["Status"]}/>
                 <Play play={this.play} status={this.props.Machine["Status"]}/>
                 <GoodPieces jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces} status={this.props.Machine["Status"]}/>
-                <Scrap jobs={this.props.Machine["Jobs"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
+                <Scrap jobs={this.props.Machine["Jobs"]} report={this.props.Machine["ReportingSequence"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
             </>
         );
     }
