@@ -96,7 +96,15 @@ class Setup extends Component {
     }
     setupKeyPress = (e, type) => {
         if (e.keyCode === 13) {
-            this.enterJob(e.target.value, type);
+            if (e.target.value.trim()) {
+                this.enterJob(e.target.value, type);
+            }
+            else if(this.state.jobs.length > 0 && this.state.oneOrder != true && type == "order") {
+                this.enterJob(e.target.value, type);
+            }
+            else {
+                alert("Please fill out both the seq and the order")
+            }
         }
     }
     enterOldToRun = (index, btnRef) => {

@@ -11,10 +11,148 @@ import Play from './actions/play.jsx';
 import GoodPieces from './actions/goodPieces.jsx';
 import Scrap from './actions/scrap.jsx';
 import filePath from '../../lib/fileLocations.js';
+import Menu from './statusMenu.jsx';
 
 class Actions extends Component {
+    state = {
+        menu: {id: 0, text: '', class: 'default-big', hidden: true, ref: React.createRef()},
+        vbscriptRunning: false,
+        timer: null
+    }
+    componentDidMount() {
+        const status = file.read(filePath("machineGo"));
+        this.getHtmlForMenu(status);
+    }
+    startVbScriptCode = () => {
+        file.createFile(filePath("machineGo"), "Not empty");
+        this.setState(prevState => {
+            const menu = prevState.menu;
+            menu.hidden = false;
+            const interval = setInterval(() => {
+                this.update();
+            }, 1000);
+            return { menu: menu, vbscriptRunning: true, timer: interval };
+        }, () => {
+            this.update();
+        });
+    }
+    update = () => {
+        if (this.state.timer != null) {
+            const status = file.read(filePath("machineGo"));
+            if (status.includes("Success") || status.includes("Error")) {
+                this.setState(prevState => {
+                    clearInterval(prevState.timer);
+                    return { timer: null };
+                });
+            }
+            this.getHtmlForMenu(status);
+        }
+    }
+    getHtmlForMenu = (status) => {
+        let text;
+        if (status.includes("Working")) {
+            text = "Working ....";
+        }
+        else if(status.includes("Not")) {
+            text = "Processing ....";
+        }
+        else if(status.includes("Error")) {
+            this.props.removeFaultyPartNumbers();
+            const error = status.split("|")[1];
+
+            const restartFunction = () => {
+                file.createFile(filePath("machineGo"), "RunAgain|"); 
+                this.closeApplication();
+            }
+            const closeFunction = () => {
+                file.createFile(filePath("machineGo"), "Donotrun|"); 
+                this.closeApplication();
+            }
+            file.createFile(filePath("machineGo"), "waitforinput|"); 
+            text = (
+                <div>
+                    <div>
+                        Error while operating:<br></br>
+                        {error}
+                    </div>
+                    <div>
+                        Press the 'restart' button to run the program again, or press the cancel button to be done.
+                    </div>
+
+                    <button className='pick-menu' onClick={restartFunction}>Restart</button>
+                    <button className='pick-menu' onClick={closeFunction}>Cancel</button>
+                </div>
+            );
+        }
+        else if(status.includes("Message")) {
+            let message = status.split("|")[1];
+            message = message.split('\n');
+            let question = '';
+            for (let i = 0; i < message.length; i++) {
+                const line = message[i];
+                question = (
+                    <>
+                        {question}
+                        {line}
+                        <br></br>
+                    </>
+                )
+            }
+            text = (
+                <div>
+                    <div>
+                        Message:<br></br>
+                        {question}<br></br>
+                        <input type='text' placeholder='enter option' onKeyDown={(e) => this.receiveInputKey(e)} ref={this.state.menu.ref}/>
+                    </div>
+                </div>
+            );
+        }
+        else if(status.includes("Success")) {
+            text = (
+                <div>
+                    <div>
+                        Operation successful, press the OK button to accept.
+                    </div>
+                    <button className='pick-menu' onClick={() => {this.closeApplication()}}>OK</button>
+                </div>
+            );
+        }
+        else {
+            return '';
+        }
+        this.setState(prevState => {
+            const menu = prevState.menu;
+            menu.text = text;
+            return { menu: menu };
+        }, () => {
+            if (status.includes("Message")) {
+                this.state.menu.ref.current.focus();
+            }
+        });
+    }
+
+    receiveInputKey = (e) => {
+        if (e.keyCode === 13) {
+            this.sendMessageBack(e.target.value);
+            e.target.value = "";
+        }
+    }
+
+    sendMessageBack = (message) => {
+        const str = message.replace(/\s/g, "") + "|";
+        file.createFile(filePath("machineGo"), str);
+    }
+
+    closeApplication = () => {
+        var win = nw.Window.get();
+        win.close(true);
+        window.close(true);
+    }
+
     startShift = (value) => {
         if(this.props.createNewMachine(value)) {
+            this.startVbScriptCode();    
             return true;
         }
     }
@@ -23,7 +161,7 @@ class Actions extends Component {
         const macroFileText = "Macro" + '\t' + "Setup";
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.changeStatus("Working");
-        window.close();
+        this.startVbScriptCode();
     }
     run = (jobs, seq, indexArray) => {
         if (jobs.length != 0) {
@@ -44,14 +182,14 @@ class Actions extends Component {
         macroFileText += "Order" + orderString + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.changeStatus("Working");
-        window.close();
+        this.startVbScriptCode();
     }
     pause = () => {
         let macroFileText = "Macro" + '\t' + "Pause" + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.saveProps([], []);
         this.props.changeStatus("Paused");
-        window.close();
+        this.startVbScriptCode();
     }
     play = () => {
         let macroFileText = "Macro" + '\t' + "Resume" + '\n';
@@ -63,7 +201,7 @@ class Actions extends Component {
         else {
             this.props.changeStatus("Idle");
         }
-        window.close();
+        this.startVbScriptCode();
     }
     scanGoodPieces = (orders, pieces) => {
         this.props.saveProps([], []);
@@ -79,7 +217,7 @@ class Actions extends Component {
         macroFileText += "Order" + orderString + '\n';
         macroFileText += "Pieces" + piecesString + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
-        window.close();
+        this.startVbScriptCode();
     }
     scanScrap = (order, pieces, reason) => {
         const orderString = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][order] : this.props.Machine["Jobs"];
@@ -91,7 +229,7 @@ class Actions extends Component {
             macroFileText += "Reason" + '\t' + reason + '\n';
         }
         file.createFile(filePath("machineMacro"), macroFileText);
-        window.close();
+        this.startVbScriptCode();
     }
     render() { 
         return (
@@ -103,6 +241,8 @@ class Actions extends Component {
                 <Play play={this.play} status={this.props.Machine["Status"]}/>
                 <GoodPieces jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces} status={this.props.Machine["Status"]}/>
                 <Scrap jobs={this.props.Machine["Jobs"]} report={this.props.Machine["ReportingSequence"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
+
+                <Menu menu={this.state.menu} />
             </>
         );
     }

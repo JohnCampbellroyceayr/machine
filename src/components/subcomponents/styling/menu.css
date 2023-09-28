@@ -10,6 +10,18 @@
     min-height: 475px;
 }
 
+.default-big {
+    background-color: gray;
+    font-size: 20px;
+    position: absolute;
+    width: 85%;
+    height: 90%;
+    top: 5%;
+    left: 7.5%;
+    text-align: center;
+    min-height: 475px;   
+}
+
 .big {
     background-color: gray;
     font-size: 25px;
