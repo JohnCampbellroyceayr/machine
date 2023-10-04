@@ -4,7 +4,7 @@ import Menu from '../valuesMenu.jsx';
 class Setup extends Component {
     state = {
         menus: [
-            {id: 0, text: null, class: 'default', hidden: true, ref: React.createRef()},
+            {id: 0, text: null, class: 'default', hidden: true, ref: React.createRef(), ref2: React.createRef()},
             {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef(), ref2: React.createRef()},
         ],
         buttons: [
@@ -30,8 +30,8 @@ class Setup extends Component {
     updateMenus = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
-            menus[0].text = this.renderChooseNumberOfJobsMenu(0);
-            menus[1].text = this.renderOrderMenu(1);
+            menus[0].text = this.renderOrderMenu(0);
+            menus[1].text = this.renderChooseNumberOfJobsMenu(1);
             const buttons = [...prevState.buttons];
             buttons[0].disabled = (this.props.status == "Idle" || this.props.status == "Working") ? false : true;
             return { menus: menus, buttons: buttons};
@@ -91,7 +91,7 @@ class Setup extends Component {
     enterJob = (value, type) => {
         if (type == "order") {
             if(value != "") {
-                this.state.menus[1].ref2.current.focus();
+                this.state.menus[0].ref2.current.focus();
             }
             else {
                 this.setup();
@@ -101,13 +101,13 @@ class Setup extends Component {
             this.setState(prevState => {
                 const jobs = [...prevState.jobs];
                 const seq = [...prevState.seq];
-                jobs.push(this.state.menus[1].ref.current.value);
-                seq.push(this.state.menus[1].ref2.current.value);
+                jobs.push(this.state.menus[0].ref.current.value);
+                seq.push(this.state.menus[0].ref2.current.value);
                 return { jobs: jobs, seq: seq };
             }, () => {
-                this.state.menus[1].ref.current.value = "";
-                this.state.menus[1].ref2.current.value = "";
-                this.state.menus[1].ref.current.focus();
+                this.state.menus[0].ref.current.value = "";
+                this.state.menus[0].ref2.current.value = "";
+                this.state.menus[0].ref.current.focus();
                 if (this.state.oneOrder) {
                     this.setup();
                 }

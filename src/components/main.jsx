@@ -6,8 +6,10 @@ class MachinePage extends Component {
     render() {
         return (
             <div>
-                <EmployeeValues />
-                <MachineValues />
+                <h2>
+                    <EmployeeValues />
+                    <MachineValues />
+                </h2>
             </div>
         );
     }

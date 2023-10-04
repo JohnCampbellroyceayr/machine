@@ -34,12 +34,12 @@ class display extends Component {
         const machine = this.props.Machine;
         const header = (
             <React.Fragment>
-                <button className='cell'>Job</button>
-                <button className='cell'>Sequence</button>
-                <button className='cell'>Part Number</button>
-                <button className='cell'>Job Status</button>
-                <button className='cell'>Good Pieces</button>
-                <button className='cell'>Pieces Needed</button>
+                <div className='cell'>Job</div>
+                <div className='cell'>Sequence</div>
+                <div className='cell'>Part Number</div>
+                {/* <div className='cell'>Job Status</div> */}
+                <div className='cell'>Good Pieces</div>
+                <div className='cell'>Pieces Needed</div>
             </React.Fragment>
         )
         if (this.machineHasMoreThanOneJob()) {
@@ -49,12 +49,12 @@ class display extends Component {
                     <>
                         {text}
                         <br></br>
-                        <button className='cell'>{machine["Jobs"][i]}</button>
-                        <button className='cell'>{machine["Sequences"][i]}</button>
-                        <button className='cell'>{machine["PartNumbers"][i]}</button>
-                        <button className='cell'>{machine["JobStatus"][i]}</button>
-                        <button className='cell'>{machine["GoodPieces"][i]}</button>
-                        <button className='cell'>{machine["PiecesNeeded"][i]}</button>
+                        <div className='cell'>{machine["Jobs"][i]}</div>
+                        <div className='cell'>{machine["Sequences"][i]}</div>
+                        <div className='cell'>{machine["PartNumbers"][i]}</div>
+                        {/* <div className='cell'>{machine["JobStatus"][i]}</div> */}
+                        <div className='cell'>{machine["GoodPieces"][i]}</div>
+                        <div className='cell'>{machine["PiecesNeeded"][i]}</div>
                     </>
                 ) 
             }
@@ -69,12 +69,12 @@ class display extends Component {
                 <div>
                     {header}
                     <br></br>
-                    <button className='cell'>{machine["Jobs"]}</button>
-                    <button className='cell'>{machine["Sequences"]}</button>
-                    <button className='cell'>{machine["PartNumbers"]}</button>
-                    <button className='cell'>{machine["JobStatus"]}</button>
-                    <button className='cell'>{machine["GoodPieces"]}</button>
-                    <button className='cell'>{machine["PiecesNeeded"]}</button>
+                    <div className='cell'>{machine["Jobs"]}</div>
+                    <div className='cell'>{machine["Sequences"]}</div>
+                    <div className='cell'>{machine["PartNumbers"]}</div>
+                    {/* <div className='cell'>{machine["JobStatus"]}</div> */}
+                    <div className='cell'>{machine["GoodPieces"]}</div>
+                    <div className='cell'>{machine["PiecesNeeded"]}</div>
                 </div>
             );
             this.setState(prevState => {
@@ -91,11 +91,48 @@ class display extends Component {
         }
         return false;
     }
-    render() { 
+    renderTableOneJob = () => {
+        const machine = this.props.Machine;
+        return (
+            <>
+                <div className='titleValue'>Current Job:</div>
+                <div className='mini-cellTable'>
+                    <div className='mini-cell'>Job</div>
+                    <div className='mini-cell'>Sequence</div>
+                    <div className='mini-cell'>Part Number</div>
+                    <div className='mini-cell'>Good Pieces</div>
+                    <div className='mini-cell'>Pieces Needed</div>
+                    <br></br>
+                    <div className='mini-cell'>{machine["Jobs"]}</div>
+                    <div className='mini-cell'>{machine["Sequences"]}</div>
+                    <div className='mini-cell'>{machine["PartNumbers"]}</div>
+                    <div className='mini-cell'>{machine["GoodPieces"]}</div>
+                    <div className='mini-cell'>{machine["PiecesNeeded"]}</div>
+                </div>
+            </>
+        );
+    }
+    renderOverOneJob = () => {
+        return (
+            <>
+                Job: {this.state.jobText} <Menu menus={this.state.menu} buttons={this.state.button} /><br></br>
+                Part Number: {this.state.partNumberText} <br></br>
+            </>
+        )
+    }
+    render() {
+        var text;
+        if (this.state.jobText != "[Group]") {
+            text = this.renderTableOneJob();
+        }
+        else {
+            text = this.renderOverOneJob();
+        }
         return (
         <div>
-            Job: {this.state.jobText} <Menu menus={this.state.menu} buttons={this.state.button} /><br></br>
-            Part Number: {this.state.partNumberText} <Menu menus={this.state.menu} buttons={this.state.button} /><br></br>
+            {/* Job: {this.state.jobText} <Menu menus={this.state.menu} buttons={this.state.button} /><br></br>
+            Part Number: {this.state.partNumberText} <Menu menus={this.state.menu} buttons={this.state.button} /><br></br> */}
+            {text}
         </div>
         );
     }

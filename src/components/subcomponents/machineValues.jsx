@@ -9,9 +9,12 @@ import MachineActions from './machineActions.jsx';
 
 import filePath from '../../lib/fileLocations.js';
 
+import serverFiles from './serverMachine.js';
+
 class machineValues extends Component {
     state = {
-        Machine: obj.get(filePath("machineLocal")),
+        Employee: serverFiles.getCurrentEmployee(),
+        Machine: serverFiles.getCurrentMachine(),
         menus: [
             {
                 id: 0, 
@@ -25,6 +28,7 @@ class machineValues extends Component {
         ]
     }
     componentDidMount() {
+        console.log(this.state.Machine);
         this.updateTextForMenu();
         file.createFile(filePath("machineMacro"), "Macro" + '\t' + "null");
         file.createFile(filePath("machineGo"), "");
@@ -34,6 +38,12 @@ class machineValues extends Component {
         this.setState(prevState => {
             const menus = [...prevState.menus]
             menus[0].text = machineMenu;
+            if (prevState.Machine == false) {
+                prevState.buttons[0].disabled = true;
+            }
+            else {
+                prevState.buttons[0].disabled = false;
+            }
             return { menus: menus };
         });
     }
@@ -62,38 +72,50 @@ class machineValues extends Component {
 
     switchMachine = (fileName) => {
         this.saveCurrentMachine();
-        const newMachine = obj.get(filePath("machineLocalDir") + fileName);
-        this.save(newMachine, filePath("machineLocal"));
-        this.setState({ Machine: newMachine }, () => {
-            this.updateTextForMenu();
-        });
+        const machineName = fileName.replace(".txt", "");
+        const newMachine = serverFiles.getExisting(machineName);
+        if (newMachine != false) {
+            serverFiles.changeEmployeeMachine(this.state.Employee["Number"], newMachine["Machine"]);
+            this.save(newMachine, filePath("machineLocal"));
+            this.setState({ Machine: newMachine }, () => {
+                this.updateTextForMenu();
+            });
+        }
     }
     createNewMachine = (Machine) => {
         const depRes = Machine.split(" ");
         const machineGroup = obj.findMachineGroup(filePath("machineGroup"), "DFT" + depRes[0], depRes[1]);
         if (machineGroup !== false) {
             this.saveCurrentMachine();
-            let newMachine = {};
-            newMachine["Machine"] = Machine.replace(" ", "-");
-            newMachine["MachineGroup"] = machineGroup;
-            newMachine["Status"] = "Idle";
-            newMachine["Jobs"] = "null";
-            newMachine["Sequences"] = "null";
-            newMachine["PartNumbers"] = "null";
-            newMachine["JobStatus"] = "null";
-            newMachine["GoodPieces"] = "null";
-            newMachine["PiecesNeeded"] = "null";
-            newMachine["ReportingSequence"] = "null";
+            let potentialNewMachine = {};
+            potentialNewMachine["Machine"] = Machine.replace(" ", "-");
+            potentialNewMachine["MachineGroup"] = machineGroup;
+            potentialNewMachine["Status"] = "Idle";
+            potentialNewMachine["Jobs"] = "null";
+            potentialNewMachine["Sequences"] = "null";
+            potentialNewMachine["PartNumbers"] = "null";
+            potentialNewMachine["JobStatus"] = "null";
+            potentialNewMachine["GoodPieces"] = "null";
+            potentialNewMachine["PiecesNeeded"] = "null";
+            potentialNewMachine["ReportingSequence"] = "null";
+            let newMachine = serverFiles.createNew(potentialNewMachine);
+            let alreadyInUse = false;
+            if (newMachine == false) {
+                newMachine = serverFiles.getExisting(potentialNewMachine["Machine"]);
+                alreadyInUse = true;
+            }
             this.save(newMachine, filePath("machineLocal"));
+            serverFiles.changeEmployeeMachine(this.state.Employee["Number"], newMachine["Machine"]);
             this.setState({ Machine: newMachine }, () => {
                 this.updateTextForMenu();
-                const macroFileText = "Macro" + '\t' + "Start Shift";
-                file.createFile(filePath("machineMacro"), macroFileText);
-
-                const employee = obj.get(filePath("employeeLocal"))["Number"];
-                const machine = this.state.Machine["Machine"];
-                const writeString = employee + '\t' + "Started on" + '\t' + machine + '\t' + Time.getDateTime();
-                file.addToFile(filePath("employeeLog"), writeString);
+                if (alreadyInUse == false) {
+                    const macroFileText = "Macro" + '\t' + "Start Shift";
+                    file.createFile(filePath("machineMacro"), macroFileText);
+                    const employee = obj.get(filePath("employeeLocal"))["Number"];
+                    const machine = this.state.Machine["Machine"];
+                    const writeString = employee + '\t' + "Started on" + '\t' + machine + '\t' + Time.getDateTime();
+                    file.addToFile(filePath("employeeLog"), writeString);
+                }
             });
             return true;
         }
@@ -103,7 +125,8 @@ class machineValues extends Component {
     }
     filterFileNames = (files) => {
         for (let i = 0; i < files.length; i++) {
-            if(files[i] == "machine-data-macro.txt" || files[i] == "machine.txt" || files[i] == this.state.Machine["Machine"] + ".txt" && files[i] == "machine-go.txt" ) {
+            const fileName = files[i].replace(".txt", "");
+            if(fileName == "machine-data-macro" || fileName == "machine" || this.state.Machine["Machine"] == fileName || fileName == "machine-go" ) {
                 files.splice(i, 1);
                 i--;
             }            
@@ -162,7 +185,7 @@ class machineValues extends Component {
             const machineObj = obj.get(filePath("machineLocalDir") + file);
             const machine = machineObj["Machine"];
             if (machine != undefined) {
-                return (<div onClick={() => this.switchMachine(file)}>{machine}</div>);
+                return (<div onClick={() => this.switchMachine(file)}>{this.removeDashesFromText(machine)}</div>);
             }
         });
         return (
@@ -218,22 +241,27 @@ class machineValues extends Component {
     render() {
         const machine = this.state.Machine;
         return (
-            <h2>
-                Machine<br></br>
-                {machine["Machine"]}
+            <>
+                <div className='titleValue'>Machine:</div> 
+                {" " + this.removeDashesFromText(machine["Machine"])}
                 <Menu 
                     menus={this.state.menus}
                     buttons={this.state.buttons}
                     class="small"
                 /><br></br>
-                Status<br></br>
-                {machine["Status"]}
+                <div className='titleValue'>Status:</div>
+                {" " + this.removeDashesFromText(machine["Status"])}
                 <br></br>
                 <MachineDisplay Machine={this.state.Machine}/>
                 <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} removeFaultyPartNumbers={this.removeFaultyPartNumbers}/>
-                {/* <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} /> */}
-            </h2>
+            </>
         );
+    }
+    removeDashesFromText(text) {
+        if (text != undefined && text != "undefined") {
+            return text.replaceAll("-", " ");
+        }
+        return '';
     }
 }
  

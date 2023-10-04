@@ -15,6 +15,9 @@ export default function filePath(locationName) {
         case "machineGroup":
             return files.curPathServer + files.machineGroupFile;
             break;
+        case "machineServerDir":
+            return files.curPathServer + files.machineServerDir;
+            break;
         case "employeeLocal":
             return files.curPath + files.employeeFile;
             break;
@@ -26,6 +29,9 @@ export default function filePath(locationName) {
             break;
         case "employeeLog":
             return files.curPathServer + files.employeeLog;
+            break;
+        case "employeesCurrent":
+        return files.curPathServer + files.employeesCurrentServer;
             break;
         case "curPathTest":
             return files.currentPath;
@@ -44,6 +50,7 @@ var files = {
     machineFile: '\\local files\\machine\\machine.txt',
     machineFileDir: '\\local files\\machine\\',
     machineGroupFile: '\\machines\\MachineGroups.txt',
+    machineServerDir: '\\machines\\Current Machines\\',
 
     machineGoFile: '\\local files\\machine\\machine-go.txt',
 
@@ -51,5 +58,6 @@ var files = {
     employeeFileDir: '\\local files\\employee\\',
     employeeList: '\\employees\\EmployeeList.txt',
     employeeLog: '\\employees\\EmployeeLog.txt',
+    employeesCurrentServer: '\\employees\\Current Employees\\',
 }
 

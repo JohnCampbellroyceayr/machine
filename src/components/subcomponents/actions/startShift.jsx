@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Menu from '../valuesMenu.jsx';
+import serverFiles from '../serverMachine.js';
 
 class StartShift extends Component {
     state = {
@@ -23,10 +24,11 @@ class StartShift extends Component {
             const menus = [...prevState.menus];
             menus[0].text = this.renderStartShiftMenu(0);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "null") ? false : true;
+            buttons[0].disabled = (this.props.status == "null" || this.props.status == undefined) ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }
+
     renderStartShiftMenu = (index) => {
         const text = (<h2>Please enter Machine:</h2>);
         const input = (<input type='text' placeholder='machine' onKeyDown={(e) => this.startShiftKeyPress(e)} ref={this.state.menus[index].ref}></input>);
@@ -49,7 +51,7 @@ class StartShift extends Component {
             e.target.value = "";
         }
     }
-    render() { 
+    render() {
         return (
             <Menu 
                 menus={this.state.menus}

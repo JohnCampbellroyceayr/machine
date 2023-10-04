@@ -7,10 +7,11 @@ import './styling/employee.css'
 
 import filePath from '../../lib/fileLocations.js';
 
+import serverFiles from './serverMachine.js';
 
 class employeeValues extends Component {
     state = {
-        Employee: obj.get(filePath("employeeLocal")),
+        Employee: serverFiles.getCurrentEmployee(),
         menus: [
             {
                 id: 0, 
@@ -119,18 +120,20 @@ class employeeValues extends Component {
     render() {
         const employee = this.state.Employee;
         return (
-            <h2>
-                Employee<br></br>
-                {employee["Number"]}
+            <>
+                <div className='titleValue'>Employee:</div>
+                {" " + employee["Number"]}
                 {" "}
-                {employee["Name"]}
-                <Menu 
-                    menus={this.state.menus}
-                    buttons={this.state.buttons}
-                    class="small"
-                />
-            </h2>
+                {this.removeDashesFromText(employee["Name"])}
+                <br></br>
+            </>
         );
+    }
+    removeDashesFromText(text) {
+        if (text != undefined && text != "undefined") {
+            return text.replaceAll("-", " ");
+        }
+        return '';
     }
 }
  

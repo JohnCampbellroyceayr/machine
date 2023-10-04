@@ -30,7 +30,11 @@ class file {
         } catch (error) {
           console.error('Error adding line to file:', error);
         }
-      }
+    }
+    static exists(path) {
+        return fs.existsSync(path);
+    }
+
 }
 
 export default file;
