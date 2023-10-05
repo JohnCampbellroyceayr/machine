@@ -19,7 +19,7 @@ class machineValues extends Component {
             {
                 id: 0, 
                 text: null, 
-                class: 'default', 
+                class: 'default',
                 hidden: true
             },
         ],
@@ -225,6 +225,7 @@ class machineValues extends Component {
         }
         this.setState({ Machine: machine }, () => {
             this.save(machine, filePath("machineLocal"));
+            serverFiles.saveMachine(this.state.Machine);
         });
     }
     changeStatus = (newStatus) => {
@@ -253,7 +254,7 @@ class machineValues extends Component {
                 {" " + this.removeDashesFromText(machine["Status"])}
                 <br></br>
                 <MachineDisplay Machine={this.state.Machine}/>
-                <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} removeFaultyPartNumbers={this.removeFaultyPartNumbers}/>
+                <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} Employee={this.state.Employee} removeFaultyPartNumbers={this.removeFaultyPartNumbers}/>
             </>
         );
     }

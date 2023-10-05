@@ -1,11 +1,15 @@
 import React, { Component } from 'react';
 import Menu from '../valuesMenu.jsx';
+import file from '../../../lib/file.js';
+import filePath from '../../../lib/fileLocations.js';
+
+import StatMenu from '../statusMenu.jsx';
 
 class Setup extends Component {
     state = {
         menus: [
             {id: 0, text: null, class: 'default', hidden: true, ref: React.createRef(), ref2: React.createRef()},
-            {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef(), ref2: React.createRef()},
+            {id: 1, text: null, class: 'default-big', hidden: true},
         ],
         buttons: [
             {id: 0, class: 'action', text: "Setup"},
@@ -15,9 +19,9 @@ class Setup extends Component {
         ],
         setupButtons: [
         ],
-        oneOrder: null,
-        jobs: [],
-        seq: [],
+        newOrderMessage: '',
+        newOrders: [],
+        interval: null,
     }
     componentDidMount() {
         this.updateMenus();
@@ -31,26 +35,52 @@ class Setup extends Component {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].text = this.renderOrderMenu(0);
-            menus[1].text = this.renderChooseNumberOfJobsMenu(1);
+            menus[1].text = this.waitForVbscriptMenu(1);
             const buttons = [...prevState.buttons];
             buttons[0].disabled = (this.props.status == "Idle" || this.props.status == "Working") ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }
-    renderChooseNumberOfJobsMenu = (index) => {
-        const text = (<h2>Do you want to setup more than 1 job? Enter = No </h2>);
-        const buttons = (
-            <>
-                <button className='pick-menu' onClick={() => this.showrenderOrderMenu(false, 1)}>Yes</button>
-                <button className='pick-menu' ref={this.state.menus[index].ref} onClick={() => this.showrenderOrderMenu(true, 1)}>No</button>
-            </>
-        );
+    waitForVbscriptMenu = (index) => {
         return (
             <div>
-                {text}
-                {buttons}
+                Please Wait while validating the order...
             </div>
         ); 
+    }
+    processVbScriptOrder = (values) => {
+        if (values[1] == "false" || values[1] == undefined) {
+            console.log(this.state.newOrders);
+            this.setState(prevState => {
+                const orders = [...prevState.newOrders];
+                const deleteOrder = orders[orders.length - 1];
+                const message = "Failed to find seq " + deleteOrder.seq + " on order " + deleteOrder.job;
+                orders.splice(orders.length - 1, 1);
+                return { newOrders: orders, newOrderMessage: message };
+            });
+        }
+        else if(values[1] == "N" || values[1] == "Y") {
+            const order = this.state.newOrders[this.state.newOrders.length - 1];
+            order.report = values[1];
+            if (values.length > 2) {
+                order.part = values[2];
+                order.goodPieces = values[3];
+                order.piecesNeeded = values[4];
+            }
+            const message = "Succesfully added seq " + order.seq + " on order " + order.job;
+            this.setState(prevState => {
+                const orders = [...prevState.newOrders];
+                orders[prevState.length - 1] = order;
+                return { newOrders: orders, newOrderMessage: message };
+            });
+
+        }
+        const menus = [...this.state.menus];
+        menus[1].hidden = true;
+        this.setState({ menus: menus }, () => {
+            this.state.menus[0].ref.current.focus();
+            this.updateMenus();
+        });
     }
     showrenderOrderMenu = (bool, index) => {
         this.setState(prevState => {
@@ -61,17 +91,43 @@ class Setup extends Component {
             this.state.menus[index].ref.current.focus();
         });
     }
-    renderOrderMenu(index) {
+    renderOrderMenu = (index) => {
         const inputOrder = (<input type='text' placeholder='order' onKeyDown={(e) => this.setupKeyPress(e, "order")} ref={this.state.menus[index].ref}></input>);
         const inputSeq = (<input type='text' placeholder='seq' onKeyDown={(e) => this.setupKeyPress(e, "seq")} ref={this.state.menus[index].ref2}></input>);
+        const orders = this.state.newOrders.map((order, i) => {
+            return (
+                <>
+                    <div className='mini-cell-menus'>{order.job}</div>
+                    <div className='mini-cell-menus'>{order.seq}</div>
+                    <br></br>
+                </>
+            );
+        });
+        const orderHeader = (
+            <>
+                <div>Work Orders to setup:</div>
+                <div className='mini-cell-menus'>Order</div>
+                <div className='mini-cell-menus'>Seq</div>
+                <br></br>
+            </>
+        );
+        const message = (
+            <div>
+                To setup these work orders press setup<br></br>
+                <button onClick={() => this.props.setup(this.state.newOrders)}>Setup</button>
+            </div>
+        );
+        const orderTable = (this.state.newOrders.length > 0) ? (<> {orderHeader} {orders} {message} </>) : '';
         const html = (
             <div>
+                {this.state.newOrderMessage}<br></br>
+                {orderTable}
                 Enter work order number:<br></br>
                 {inputOrder}<br></br>
                 Enter work order sequence:<br></br>
                 {inputSeq}
             </div>
-        )
+        );
         return html;
     }
 
@@ -93,24 +149,27 @@ class Setup extends Component {
             if(value != "") {
                 this.state.menus[0].ref2.current.focus();
             }
-            else {
-                this.setup();
-            }
         }
         else {
+            const order = {
+                job: this.state.menus[0].ref.current.value,
+                seq: this.state.menus[0].ref2.current.value,
+                report: null,
+                part: null,
+                goodPieces: null,
+                piecesNeeded: null,
+            }
             this.setState(prevState => {
-                const jobs = [...prevState.jobs];
-                const seq = [...prevState.seq];
-                jobs.push(this.state.menus[0].ref.current.value);
-                seq.push(this.state.menus[0].ref2.current.value);
-                return { jobs: jobs, seq: seq };
-            }, () => {
+                const orders = [...prevState.newOrders]
+                orders.push(order);
+                console.log(orders);
+                return { newOrders: orders };
+            }, () => { 
+                console.log(this.state.newOrders[0]);
                 this.state.menus[0].ref.current.value = "";
                 this.state.menus[0].ref2.current.value = "";
                 this.state.menus[0].ref.current.focus();
-                if (this.state.oneOrder) {
-                    this.setup();
-                }
+                this.checkWorkOrder(order);
             });
         }
     }
@@ -121,14 +180,45 @@ class Setup extends Component {
             menus[1].hidden = true;
             return { menus: menus };
         });
-        this.props.setup(this.state.jobs, this.state.seq);
     }
+
+    checkWorkOrder(order) {
+        let text = "Macro" + '\t' + "CheckWorkOrder" + '\n';
+        text += "Order" + '\t' + order.job + '\n';
+        text += "Seq" + '\t' + order.seq + '\n';
+        file.createFile(filePath("machineMacro"), text);
+        file.createFile(filePath("machineGo"), "Not Empty");
+        const menus = [...this.state.menus];
+        menus[1].hidden = false;
+        this.setState({ interval: setInterval(this.updateCheckWorkOrder, 1000), menus: menus });
+    }
+
+    updateCheckWorkOrder = () => {
+        const fileText = file.read(filePath("machineGo"));
+        const splitText = fileText.split("|");
+        if (splitText[0] == "checkOrder") {
+            clearInterval(this.state.interval);
+            this.setState({
+                interval: null,
+            }, () => {
+                this.processVbScriptOrder(splitText);
+            })
+        }
+    }
+
+
     render() { 
         return (
-            <Menu 
-                menus={this.state.menus}
-                buttons={this.state.buttons}
-            />
+            <>
+                <Menu 
+                    menus={[this.state.menus[0]]}
+                    buttons={[this.state.buttons[0]]}
+                />
+                <StatMenu 
+                    menu={this.state.menus[1]}
+                    button={this.state.buttons[1]}
+                />
+            </>
         );
     }
 }

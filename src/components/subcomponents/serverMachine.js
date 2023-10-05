@@ -81,6 +81,16 @@ class serverFiles {
             file.createFile(employeeFilePath, obj.makeObjectIntoString(currentEmployee));            
         }
     }
+    static saveMachine(machineObj) {
+        const text = obj.makeObjectIntoString(machineObj);
+        const machine = machineObj["Machine"];
+        if (this.usableValue(machine)) {
+            const filePathMachine = filePath("machineServerDir") + machine + ".txt";
+            if (file.exists(filePathMachine)) {
+                file.createFile(filePathMachine, text);
+            }
+        }
+    }
 }
  
 export default serverFiles;

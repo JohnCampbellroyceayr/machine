@@ -2,6 +2,7 @@ import React, { Component, useState } from 'react';
 import file from '../../lib/file.js';
 import Time from '../../lib/time.js';
 import obj from '../../lib/textFileObj.js';
+import serverFiles from './serverMachine.js';
 
 import StartShift from './actions/startShift.jsx';
 import Setup from './actions/setup.jsx';
@@ -150,18 +151,44 @@ class Actions extends Component {
         window.close(true);
     }
 
+    logMachineNoReportSeq = (op, order, seq) => {
+        let text = op + '\t';
+        text += order + '\t';
+        text += seq + '\t';
+        text += Time.getDateTime() + '\t';
+        text += this.props.Machine["Machine"] + '\t';
+        text += this.props.Employee["Number"] + '\t';
+        file.addToFile(filePath("machineLog"), text);
+    }
+
     startShift = (value) => {
         if(this.props.createNewMachine(value)) {
             this.startVbScriptCode();    
             return true;
         }
     }
-    setup = (jobs, seq) => {
-        this.props.saveProps(["Jobs", "Sequences"], [jobs, seq]);
-        const macroFileText = "Macro" + '\t' + "Setup";
-        file.createFile(filePath("machineMacro"), macroFileText);
-        this.props.changeStatus("Working");
-        this.startVbScriptCode();
+    setup = (orders) => {
+        if (orders.length > 0) {
+            let job = [];
+            let seq = [];
+            let part = [];
+            let report = [];
+            let goodPieces = [];
+            let piecesNeeded = [];
+            for (let i = 0; i < orders.length; i++) {
+                job.push(orders[i].job);
+                seq.push(orders[i].seq);
+                part.push(orders[i].part);
+                report.push(orders[i].report);
+                goodPieces.push(orders[i].goodPieces);
+                piecesNeeded.push(orders[i].piecesNeeded);
+            }
+            this.props.saveProps(["Jobs", "Sequences", "PartNumbers", "ReportingSequence", "GoodPieces", "PiecesNeeded"], [job, seq, part, report, goodPieces, piecesNeeded]);
+            const macroFileText = "Macro" + '\t' + "Setup";
+            file.createFile(filePath("machineMacro"), macroFileText);
+            this.props.changeStatus("Working");
+            this.startVbScriptCode();
+        }
     }
     run = (jobs, seq, indexArray) => {
         if (jobs.length != 0) {
@@ -235,12 +262,12 @@ class Actions extends Component {
         return (
             <>
                 <StartShift startShift={this.startShift} status={this.props.Machine["Status"]}/>
-                <Setup setup={this.setup} status={this.props.Machine["Status"]}/>
-                <Run run={this.run} jobs={this.props.Machine["Jobs"]} status={this.props.Machine["Status"]}/>
+                <Setup logMachineNoReportSeq={this.logMachineNoReportSeq} setup={this.setup} status={this.props.Machine["Status"]}/>
+                <Run logMachineNoReportSeq={this.logMachineNoReportSeq} run={this.run} jobs={this.props.Machine["Jobs"]} status={this.props.Machine["Status"]}/>
                 <Pause machine={this.props.Machine} pause={this.pause} status={this.props.Machine["Status"]}/>
                 <Play play={this.play} status={this.props.Machine["Status"]}/>
-                <GoodPieces jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces} status={this.props.Machine["Status"]}/>
-                <Scrap jobs={this.props.Machine["Jobs"]} report={this.props.Machine["ReportingSequence"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
+                <GoodPieces logMachineNoReportSeq={this.logMachineNoReportSeq} jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces} status={this.props.Machine["Status"]}/>
+                <Scrap logMachineNoReportSeq={this.logMachineNoReportSeq} jobs={this.props.Machine["Jobs"]} report={this.props.Machine["ReportingSequence"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
 
                 <Menu menu={this.state.menu} />
             </>

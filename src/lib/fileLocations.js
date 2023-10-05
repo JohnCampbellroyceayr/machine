@@ -18,6 +18,9 @@ export default function filePath(locationName) {
         case "machineServerDir":
             return files.curPathServer + files.machineServerDir;
             break;
+        case "machineLog":
+            return files.curPathServer + files.machineLog;
+            break;
         case "employeeLocal":
             return files.curPath + files.employeeFile;
             break;
@@ -43,15 +46,15 @@ export default function filePath(locationName) {
 var path = require('path'); path.dirname(process.execPath);
 var files = {
     //just do a ./
-    // curPath: path.dirname(path.dirname(global.__dirname)),
-    curPath: 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private',
+    curPath: path.dirname(path.dirname(global.__dirname)),
+    // curPath: 'C:\\Users\\John Campbell\\AppData\\Roaming\\IBM\\Client Access\\Emulator\\private',
     curPathServer: '\\\\192.168.0.13\\Engdrawing\\Inspection Logs\\Scanning Files',
     macroFile: '\\local files\\machine\\machine-data-macro.txt',
     machineFile: '\\local files\\machine\\machine.txt',
     machineFileDir: '\\local files\\machine\\',
     machineGroupFile: '\\machines\\MachineGroups.txt',
     machineServerDir: '\\machines\\Current Machines\\',
-
+    machineLog: "\\machines\\MachineLog.txt",
     machineGoFile: '\\local files\\machine\\machine-go.txt',
 
     employeeFile: '\\local files\\employee\\employee.txt',

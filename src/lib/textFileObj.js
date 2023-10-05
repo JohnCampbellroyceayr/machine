@@ -19,7 +19,16 @@ class obj {
     static makeObjectIntoString(obj) {
         let fileContent = '';
         for (const prop in obj) {
-            fileContent += `${prop}\t${obj[prop]}\n`;
+            if (Array.isArray(obj[prop])) {
+                let propValue = obj[prop][0];
+                for (let i = 1; i < obj[prop].length; i++) {
+                    propValue += '\t' + obj[prop][i];
+                }
+                fileContent += `${prop}\t${propValue}\n`;
+            }
+            else {
+                fileContent += `${prop}\t${obj[prop]}\n`;
+            }
         }
         return fileContent;
     }
