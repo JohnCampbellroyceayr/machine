@@ -133,15 +133,15 @@ class Setup extends Component {
 
     setupKeyPress = (e, type) => {
         if (e.keyCode === 13) {
-            if (e.target.value.trim()) {
+            if (e.target.value.trim() || type == "seq") {
                 this.enterJob(e.target.value, type);
             }
-            else if(this.state.jobs.length > 0 && this.state.oneOrder != true && type == "order") {
-                this.enterJob(e.target.value, type);
-            }
-            else {
-                alert("Please fill out both the seq and the order")
-            }
+            // else if(this.state.jobs.length > 0 && this.state.oneOrder != true && type == "order") {
+            //     this.enterJob(e.target.value, type);
+            // }
+            // else {
+            //     alert("Please fill out both the seq and the order")
+            // }
         }
     }
     enterJob = (value, type) => {
@@ -151,9 +151,10 @@ class Setup extends Component {
             }
         }
         else {
+            const seq = (this.state.menus[0].ref2.current.value == "") ? 'null' : this.state.menus[0].ref2.current.value;
             const order = {
                 job: this.state.menus[0].ref.current.value,
-                seq: this.state.menus[0].ref2.current.value,
+                seq: seq,
                 report: null,
                 part: null,
                 goodPieces: null,

@@ -167,7 +167,7 @@ class Actions extends Component {
             return true;
         }
     }
-    setup = (orders) => {
+    setup = async (orders) => {
         if (orders.length > 0) {
             let job = [];
             let seq = [];
@@ -183,11 +183,26 @@ class Actions extends Component {
                 goodPieces.push(orders[i].goodPieces);
                 piecesNeeded.push(orders[i].piecesNeeded);
             }
-            this.props.saveProps(["Jobs", "Sequences", "PartNumbers", "ReportingSequence", "GoodPieces", "PiecesNeeded"], [job, seq, part, report, goodPieces, piecesNeeded]);
+            await this.props.saveProps(["Jobs", "Sequences", "PartNumbers", "ReportingSequence", "GoodPieces", "PiecesNeeded"], [job, seq, part, report, goodPieces, piecesNeeded]);
             const macroFileText = "Macro" + '\t' + "Setup";
             file.createFile(filePath("machineMacro"), macroFileText);
-            this.props.changeStatus("Working");
+            this.props.changeStatus("Working"); //change this to setup
             this.startVbScriptCode();
+            const jobs = this.props.Machine["Jobs"];
+            const seqs = this.props.Machine["Sequences"];
+            const reports = this.props.Machine["ReportingSequence"];
+            if (Array.isArray(jobs)) {
+                for (let i = 0; i < jobs.length; i++) {
+                    if (reports[i] == "N") {
+                        this.logMachineNoReportSeq("Setup", jobs[i], seqs[i]);
+                    }
+                }
+            }
+            else {
+                if (reports == "N") {
+                    this.logMachineNoReportSeq("Setup", jobs, seqs);
+                }
+            }
         }
     }
     run = (jobs, seq, indexArray) => {
