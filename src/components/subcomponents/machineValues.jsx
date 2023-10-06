@@ -205,26 +205,28 @@ class machineValues extends Component {
     saveProps = (propsArray, valuesArray) => {
         var machine = this.state.Machine;
         for (let i = 0; i < propsArray.length; i++) {
-            if(Array.isArray(valuesArray[i])) {
-                if (machine[propsArray[i]] == "null" || machine[propsArray[i]] == undefined) {
-                    machine[propsArray[i]] = valuesArray[i]
-                }
-                else if(Array.isArray(machine[propsArray[i]])) {
-                    for (let j = 0; j < valuesArray[i].length; j++) {
-                        machine[propsArray[i]].push(valuesArray[i][j]);
+            if (valuesArray[i].length != []) {
+                if(Array.isArray(valuesArray[i])) {
+                    if (machine[propsArray[i]] == "null" || machine[propsArray[i]] == undefined) {
+                        machine[propsArray[i]] = valuesArray[i]
+                    }
+                    else if(Array.isArray(machine[propsArray[i]])) {
+                        for (let j = 0; j < valuesArray[i].length; j++) {
+                            machine[propsArray[i]].push(valuesArray[i][j]);
+                        }
+                    }
+                    else {
+                        valuesArray[i].splice(0, 0, machine[propsArray[i]]);
+                        machine[propsArray[i]] = valuesArray[i];
                     }
                 }
                 else {
-                    valuesArray[i].splice(0, 0, machine[propsArray[i]]);
                     machine[propsArray[i]] = valuesArray[i];
                 }
             }
-            else {
-                machine[propsArray[i]] = valuesArray[i];
-            }
         }
         this.setState({ Machine: machine }, () => {
-            this.save(machine, filePath("machineLocal"));
+            this.save(this.state.Machine, filePath("machineLocal"));
             serverFiles.saveMachine(this.state.Machine);
         });
     }

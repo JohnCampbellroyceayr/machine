@@ -39,7 +39,7 @@ class GoodPieces extends Component {
             menus[0].text = this.renderChooseNumberOfJobsMenu(0);
             menus[1].text = this.renderOrderMenu(1);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "Working") ? false : true;
+            buttons[0].disabled = (this.props.status == "Working" || 1 == 1) ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }

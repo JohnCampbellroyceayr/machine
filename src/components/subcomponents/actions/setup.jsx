@@ -64,8 +64,8 @@ class Setup extends Component {
             order.report = values[1];
             if (values.length > 2) {
                 order.part = values[2];
-                order.goodPieces = values[3];
-                order.piecesNeeded = values[4];
+                order.goodPieces = values[4];
+                order.piecesNeeded = values[3];
             }
             const message = "Succesfully added seq " + order.seq + " on order " + order.job;
             this.setState(prevState => {
