@@ -25,10 +25,10 @@ class machineValues extends Component {
         ],
         buttons: [
             {id: 0, class: 'small', text: "Change Machine"},
-        ]
+        ],
+        runVbCode: false,
     }
     componentDidMount() {
-        console.log(this.state.Machine);
         this.updateTextForMenu();
         file.createFile(filePath("machineMacro"), "Macro" + '\t' + "null");
         file.createFile(filePath("machineGo"), "");
@@ -82,6 +82,26 @@ class machineValues extends Component {
             });
         }
     }
+    deleteMachine = () => {
+        serverFiles.deleteMachine(this.state.Machine["Machine"]);
+        this.deleteLocalMachine(this.state.Machine["Machine"]);
+        const machineNames = this.filterFileNames(file.getFileNames(filePath("machineLocalDir")));
+        if (machineNames.length == 0) {
+            serverFiles.changeEmployeeMachine(this.state.Employee["Number"], "undefined");
+            return true;
+        }
+        for (let i = 0; i < machineNames.length; i++) {
+            const newMachine = serverFiles.getExisting(machineNames[i].replace(".txt", ""));
+            if(newMachine != false) {
+                this.setState({ Machine: newMachine });
+                serverFiles.changeEmployeeMachine(this.state.Employee["Number"], newMachine["Machine"]);
+                return true;
+            }
+        }
+    }
+    deleteLocalMachine = (machine) => {
+        file.delete(filePath("machineLocalDir") + machine + ".txt");
+    }
     createNewMachine = (Machine) => {
         const depRes = Machine.split(" ");
         const machineGroup = obj.findMachineGroup(filePath("machineGroup"), "DFT" + depRes[0], depRes[1]);
@@ -115,6 +135,7 @@ class machineValues extends Component {
                     const machine = this.state.Machine["Machine"];
                     const writeString = employee + '\t' + "Started on" + '\t' + machine + '\t' + Time.getDateTime();
                     file.addToFile(filePath("employeeLog"), writeString);
+                    this.setState({ runVbCode: true });
                 }
             });
             return true;
@@ -126,7 +147,7 @@ class machineValues extends Component {
     filterFileNames = (files) => {
         for (let i = 0; i < files.length; i++) {
             const fileName = files[i].replace(".txt", "");
-            if(fileName == "machine-data-macro" || fileName == "machine" || this.state.Machine["Machine"] == fileName || fileName == "machine-go" ) {
+            if(fileName == "machine-data-macro" || fileName == "machine" || this.state.Machine["Machine"] == fileName || fileName == "machine-go" || serverFiles.getExisting(fileName) == false) {
                 files.splice(i, 1);
                 i--;
             }            
@@ -174,7 +195,7 @@ class machineValues extends Component {
             machine["Jobs"] = jobs;
             machine["Sequences"] = seq;
             machine["PartNumbers"] = parts;
-            console.log(machine);
+
             this.save(machine, filePath("machineLocal"));
         });
     }
@@ -205,7 +226,7 @@ class machineValues extends Component {
     saveProps = (propsArray, valuesArray) => {
         var machine = this.state.Machine;
         for (let i = 0; i < propsArray.length; i++) {
-            if (valuesArray[i].length != []) {
+            if (valuesArray[i] != []) {
                 if(Array.isArray(valuesArray[i])) {
                     if (machine[propsArray[i]] == "null" || machine[propsArray[i]] == undefined) {
                         machine[propsArray[i]] = valuesArray[i]
@@ -227,9 +248,42 @@ class machineValues extends Component {
         }
         this.setState({ Machine: machine }, () => {
             this.save(this.state.Machine, filePath("machineLocal"));
+
             serverFiles.saveMachine(this.state.Machine);
         });
     }
+
+    saveGoodPieces = (order, addedpiece) => {
+        let orders = this.state.Machine["Jobs"];
+        if (!Array.isArray(orders)) {
+           orders = [orders];
+        }
+        for (let i = 0; i < orders.length; i++) {
+            if(orders[i] == order) {
+                const machine = this.state.Machine;
+                let pieces = machine["GoodPieces"];
+                if (Array.isArray(pieces)) {
+                    const piece = pieces[i];
+                    const newPieces = (parseInt(piece) + parseInt(addedpiece)).toString();
+                    pieces[i] = newPieces;
+                }
+                else {
+                    const piece = pieces;
+               
+                    const newPieces = (parseInt(piece) + parseInt(addedpiece)).toString();
+                    pieces = newPieces;
+                }
+                this.setState(prevState => {
+                    
+                    // // pieces[i] = (parseInt(piece) + parseInt(pieces[i])).toString();
+                    prevState.Machine["GoodPieces"] = pieces;
+                    return { Machine: prevState.Machine };
+                });
+                return ;
+            }            
+        }
+    }
+
     changeStatus = (newStatus) => {
         if (newStatus !== this.state.Machine["Status"]) {
             this.setState(prevState => {
@@ -237,7 +291,7 @@ class machineValues extends Component {
                 machine["Status"] = newStatus;
                 return { Machine: prevState.Machine };
             }, () => {
-                this.saveCurrentMachine();
+                serverFiles.saveMachine(this.state.Machine)
             });
         }
     }
@@ -256,7 +310,7 @@ class machineValues extends Component {
                 {" " + this.removeDashesFromText(machine["Status"])}
                 <br></br>
                 <MachineDisplay Machine={this.state.Machine}/>
-                <MachineActions changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} Employee={this.state.Employee} removeFaultyPartNumbers={this.removeFaultyPartNumbers}/>
+                <MachineActions runVbCode={this.state.runVbCode} deleteMachine={this.deleteMachine} changeStatus={this.changeStatus} createNewMachine={this.createNewMachine} saveProps={this.saveProps} Machine={this.state.Machine} Employee={this.state.Employee} removeFaultyPartNumbers={this.removeFaultyPartNumbers} saveGoodPieces={this.saveGoodPieces}/>
             </>
         );
     }

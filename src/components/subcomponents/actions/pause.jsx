@@ -23,7 +23,7 @@ class Pause extends Component {
             const menus = [...prevState.menus];
             menus[0].text = this.renderMenu(0);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "Idle" || this.props.status == "Working") ? false : true;
+            buttons[0].disabled = (this.props.status == "Setup" || this.props.status == "Run" || this.props.status == "Idle") ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }

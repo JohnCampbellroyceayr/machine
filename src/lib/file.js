@@ -34,7 +34,11 @@ class file {
     static exists(path) {
         return fs.existsSync(path);
     }
-
+    static delete(path) {
+        if(this.exists(path)) {
+            fs.unlinkSync(path);
+        }
+    }
 }
 
 export default file;

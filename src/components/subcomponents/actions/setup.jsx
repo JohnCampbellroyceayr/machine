@@ -12,7 +12,7 @@ class Setup extends Component {
             {id: 1, text: null, class: 'default-big', hidden: true},
         ],
         buttons: [
-            {id: 0, class: 'action', text: "Setup"},
+            {id: 0, class: 'none', text: "Yes"},
             {id: 1, class: 'none', text: "Yes"},
         ],
         setupMenus: [
@@ -37,7 +37,7 @@ class Setup extends Component {
             menus[0].text = this.renderOrderMenu(0);
             menus[1].text = this.waitForVbscriptMenu(1);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "Idle" || this.props.status == "Working") ? false : true;
+            buttons[0].disabled = (this.props.status == "Setup" || this.props.status == "Run" || this.props.status == "Idle") ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }
@@ -114,7 +114,7 @@ class Setup extends Component {
         const message = (
             <div>
                 To setup these work orders press setup<br></br>
-                <button onClick={() => this.props.setup(this.state.newOrders)}>Setup</button>
+                <button onClick={() => this.props.setup(this.state.newOrders)} className='pick-menu'>Setup</button>
             </div>
         );
         const orderTable = (this.state.newOrders.length > 0) ? (<> {orderHeader} {orders} {message} </>) : '';
@@ -207,10 +207,24 @@ class Setup extends Component {
         }
     }
 
+    showAndClear = () => {
+        const menu = this.state.menus;
+        menu[0].hidden = false;
+        this.setState({
+            menus: menu,
+            newOrderMessage: '',
+            newOrders: [],
+            interval: null,
+        }, () => {
+            this.state.menus[0].ref.current.focus();
+            this.updateMenus();
+        });
+    }
 
     render() { 
         return (
             <>
+                <button className='action' onClick={this.showAndClear} disabled={this.state.buttons[0].disabled}>Setup</button>
                 <Menu 
                     menus={[this.state.menus[0]]}
                     buttons={[this.state.buttons[0]]}

@@ -11,6 +11,7 @@ import Pause from './actions/pause.jsx';
 import Play from './actions/play.jsx';
 import GoodPieces from './actions/goodPieces.jsx';
 import Scrap from './actions/scrap.jsx';
+import EndShift from './actions/signout.jsx';
 import filePath from '../../lib/fileLocations.js';
 import Menu from './statusMenu.jsx';
 
@@ -19,6 +20,11 @@ class Actions extends Component {
         menu: {id: 0, text: '', class: 'default-big', hidden: true, ref: React.createRef()},
         vbscriptRunning: false,
         timer: null
+    }
+    componentDidUpdate(prevProps) {
+        if (prevProps.runVbCode != this.props.runVbCode) {
+            this.startVbScriptCode();
+        }
     }
     componentDidMount() {
         const status = file.read(filePath("machineGo"));
@@ -149,6 +155,7 @@ class Actions extends Component {
         var win = nw.Window.get();
         win.close(true);
         window.close(true);
+        file.createFile(filePath("machineGo"), "Not empty");
     }
 
     logMachineNoReportSeq = (op, order, seq) => {
@@ -186,7 +193,7 @@ class Actions extends Component {
             await this.props.saveProps(["Jobs", "Sequences", "PartNumbers", "ReportingSequence", "GoodPieces", "PiecesNeeded"], [job, seq, part, report, goodPieces, piecesNeeded]);
             const macroFileText = "Macro" + '\t' + "Setup";
             file.createFile(filePath("machineMacro"), macroFileText);
-            this.props.changeStatus("Working"); //change this to setup
+            this.props.changeStatus("Setup");
             this.startVbScriptCode();
             const jobs = this.props.Machine["Jobs"];
             const seqs = this.props.Machine["Sequences"];
@@ -223,7 +230,7 @@ class Actions extends Component {
         await this.props.saveProps(["Jobs", "Sequences", "PartNumbers", "ReportingSequence", "GoodPieces", "PiecesNeeded"], [job, seq, part, report, goodPieces, piecesNeeded]);
         const macroFileText = "Macro" + '\t' + "Run";
         file.createFile(filePath("machineMacro"), macroFileText);
-        this.props.changeStatus("Working"); //change this to run
+        this.props.changeStatus("Run");
         this.startVbScriptCode();
         const jobs = this.props.Machine["Jobs"];
         const seqs = this.props.Machine["Sequences"];
@@ -245,7 +252,8 @@ class Actions extends Component {
         let macroFileText = "Macro" + '\t' + "Pause" + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.saveProps([], []);
-        this.props.changeStatus("Paused");
+        const oldStatus = this.props.Machine["Status"];
+        this.props.changeStatus(oldStatus + "-Paused");
         this.startVbScriptCode();
     }
     play = () => {
@@ -253,28 +261,39 @@ class Actions extends Component {
         file.createFile(filePath("machineMacro"), macroFileText);
         this.props.saveProps([], []);
         if (this.props.Machine["Jobs"] != "null" && this.props.Machine["Jobs"] != undefined) {
-            this.props.changeStatus("Working");
+            const oldStatus = this.props.Machine["Status"].split("-")[0];
+            this.props.changeStatus(oldStatus);
         }
         else {
             this.props.changeStatus("Idle");
         }
         this.startVbScriptCode();
     }
-    scanGoodPieces = (orders, pieces) => {
-        this.props.saveProps([], []);
+    scanGoodPieces = async (orders, pieces) => {
         let orderString = "";
         let piecesString = "";
-        for (let i = 0; i < orders.length; i++) {
-            const order = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][orders[i]] : this.props.Machine["Jobs"];
-            const numpieces = pieces[i];
-            orderString += '\t' + order;
-            piecesString += '\t' + numpieces;
-        }
+        const order = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][orders[0]] : this.props.Machine["Jobs"];
+        const numpieces = pieces[0];
+        await this.props.saveGoodPieces(order, numpieces);
+        
+        await this.props.saveProps([], []);
         let macroFileText = "Macro" + '\t' + "GoodPieces" + '\n';
-        macroFileText += "Order" + orderString + '\n';
-        macroFileText += "Pieces" + piecesString + '\n';
+        macroFileText += "Order" + '\t' + order + '\n';
+        macroFileText += "Pieces" + '\t' + numpieces + '\n';
         file.createFile(filePath("machineMacro"), macroFileText);
         this.startVbScriptCode();
+
+        const reports = this.props.Machine["ReportingSequence"];
+        if (Array.isArray(reports)) {
+            if (reports[orders] == "N") {
+                this.logMachineNoReportSeq("Good Pieces", order, "");
+            }
+        }
+        else {
+            if (reports == "N") {
+                this.logMachineNoReportSeq("Good Pieces", order, "");
+            }
+        }
     }
     scanScrap = (order, pieces, reason) => {
         const orderString = (Array.isArray(this.props.Machine["Jobs"])) ? this.props.Machine["Jobs"][order] : this.props.Machine["Jobs"];
@@ -288,7 +307,15 @@ class Actions extends Component {
         file.createFile(filePath("machineMacro"), macroFileText);
         this.startVbScriptCode();
     }
-    render() { 
+    endShift = () => {
+        let macroFileText = "Macro" + '\t' + "EndShift" + '\n';
+        macroFileText += "Machine" + '\t' + this.props.Machine["Machine"] + '\n';
+        file.createFile(filePath("machineMacro"), macroFileText)
+        this.props.deleteMachine()
+        this.startVbScriptCode();    
+        return true;
+    }
+    render() {
         return (
             <>
                 <StartShift startShift={this.startShift} status={this.props.Machine["Status"]}/>
@@ -298,8 +325,11 @@ class Actions extends Component {
                 <Play play={this.play} status={this.props.Machine["Status"]}/>
                 <GoodPieces logMachineNoReportSeq={this.logMachineNoReportSeq} jobs={this.props.Machine["Jobs"]} goodPieces={this.props.Machine["GoodPieces"]} requiredPieces={this.props.Machine["PiecesNeeded"]} scanGoodPieces={this.scanGoodPieces} status={this.props.Machine["Status"]}/>
                 <Scrap logMachineNoReportSeq={this.logMachineNoReportSeq} jobs={this.props.Machine["Jobs"]} report={this.props.Machine["ReportingSequence"]} scanScrap={this.scanScrap} status={this.props.Machine["Status"]}/>
-
+                <EndShift endShift={this.endShift} status={this.props.Machine["Status"]} machine={this.props.Machine["Machine"]} />
+                <br></br>
+                <br></br>
                 <Menu menu={this.state.menu} />
+                <button className='pick-menu' onClick={() => {this.closeApplication()}}>Close</button>
             </>
         );
     }

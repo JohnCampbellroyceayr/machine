@@ -41,7 +41,7 @@ class Scrap extends Component {
             menus[0].text = this.renderOrderMenu(0);
             menus[2].text = this.renderNoReportReason(2);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "Working") ? false : true;
+            buttons[0].disabled = (this.props.status == "Setup" || this.props.status == "Run") ? false : true;
             return { menus: menus, buttons: buttons};
         });
     }

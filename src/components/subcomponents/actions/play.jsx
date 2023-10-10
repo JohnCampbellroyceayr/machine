@@ -6,7 +6,14 @@ class Play extends Component {
         this.props.play();
     }
     render() {
-        const disabled = (this.props.status == "Paused") ? false : true;
+        let status = '';
+        try {
+            status = this.props.status.includes("Paused");
+        }
+        catch {
+            
+        }
+        const disabled = (status) ? false : true;
         return (
             <button className='action' onClick={this.play} disabled={disabled}>Resume</button>
         );

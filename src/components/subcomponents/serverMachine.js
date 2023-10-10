@@ -91,6 +91,16 @@ class serverFiles {
             }
         }
     }
+    static deleteMachine(machineName) {
+        console.log(machineName);
+        if (this.usableValue(machineName)) {
+            const filePathMachine = filePath("machineServerDir") + machineName + ".txt";
+            console.log(filePathMachine);
+            if (file.exists(filePathMachine)) {
+                file.delete(filePathMachine);
+            }
+        }
+    }
 }
  
 export default serverFiles;

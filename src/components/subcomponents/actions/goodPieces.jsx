@@ -3,22 +3,20 @@ import Menu from '../valuesMenu.jsx';
 class GoodPieces extends Component {
     state = {
         menus: [
-            {id: 0, text: null, class: 'default', hidden: true, ref: React.createRef()},
-            {id: 1, text: null, class: 'default', hidden: true},
-            {id: 2, text: null, class: 'default', hidden: true, ref: React.createRef()},
+            {id: 0, text: null, class: 'default', hidden: true},
+            {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef()},
         ],
         buttons: [
-            {id: 0, class: 'action', text: "Good Pieces"},
+            {id: 0, class: 'none', text: "Yes"},
             {id: 1, class: 'none', text: "Yes"},
-            {id: 2, class: 'none', text: "Yes"},
         ],
         setupMenus: [
         ],
         setupButtons: [
         ],
-        oneOrder: null,
         jobIndex: [],
         numPieces: 0,
+
     }
     componentDidUpdate(prevProps) {
         if (prevProps !== this.props) {
@@ -36,27 +34,11 @@ class GoodPieces extends Component {
     updateMenus = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
-            menus[0].text = this.renderChooseNumberOfJobsMenu(0);
-            menus[1].text = this.renderOrderMenu(1);
+            menus[0].text = this.renderOrderMenu(0);
             const buttons = [...prevState.buttons];
-            buttons[0].disabled = (this.props.status == "Working" || 1 == 1) ? false : true;
+            buttons[0].disabled = (this.props.status == "Setup" || this.props.status == "Run") ? false : true;
             return { menus: menus, buttons: buttons};
         });
-    }
-    renderChooseNumberOfJobsMenu = (index) => {
-        const text = (<h2>Do you want to scan good pieces of more than 1 job? Enter = No </h2>);
-        const buttons = (
-            <>
-                <button className='pick-menu' onClick={() => this.showrenderOrderMenu(false, 1)}>Yes</button>
-                <button className='pick-menu' ref={this.state.menus[index].ref} onClick={() => this.showrenderOrderMenu(true, 1)}>No</button>
-            </>
-        );
-        return (
-            <div>
-                {text}
-                {buttons}
-            </div>
-        ); 
     }
     showrenderOrderMenu = (bool, index) => {
         this.setState(prevState => {
@@ -86,12 +68,10 @@ class GoodPieces extends Component {
             };
             return <button key={i} className='pick-menu' onClick={onclick} ref={ref}>{job}{" "}{numPieces}</button>
         });
-        const enterBtn = (<button className='pick-menu' onClick={() => this.scanGoodPieces()}>Scan Good Pieces</button>);
         const html = (
             <div>
-                Select job:<br></br>
+                Select job to scan good pieces on:<br></br><br></br>
                 {jobs}<br></br>
-                {enterBtn}
             </div>
         )
         return html;
@@ -115,11 +95,12 @@ class GoodPieces extends Component {
     handleChangePiecesMenu = (event, index) => {
         if (event.keyCode === 13) {
            this.enterToRun(event.target.value, index);
+           this.scanGoodPieces();
         }
     }
     menuToSelectPieces = (orderIndex) => {
         const machineJobs = (Array.isArray(this.props.jobs)) ? this.props.jobs : [this.props.jobs];
-        const numPiecesMenuIndex = 2;
+        const numPiecesMenuIndex = 1;
         const defaultNumber = this.getDefault(orderIndex);
         this.setState(prevState => {
             const menus = prevState.menus;
@@ -128,12 +109,14 @@ class GoodPieces extends Component {
         }, () => {
             const order = machineJobs[orderIndex];
             const inputOrder = (<input type='number' defaultValue={defaultNumber} placeholder='number of pieces' onKeyDown={(e) => this.handleChangePiecesMenu(e, orderIndex)} ref={this.state.menus[numPiecesMenuIndex].ref}></input>);
-            const backBtn = (<button className='pick-menu' onClick={() => this.showMenu(1)}>Back</button>);
+            const backBtn = (<button className='pick-menu' onClick={() => this.showMenu(0)}>Back</button>);
+            const enterBtn = (<button className='pick-menu' onClick={() => this.saveAndscanGoodPieces(orderIndex)}>Scan Good Pieces</button>);
             const html = (
                 <>
                     {order}<br></br>
                     {inputOrder}<br></br><br></br>
-                    {backBtn}<br></br>
+                    {backBtn}<br></br><br></br>
+                    {enterBtn}
                 </>
             );
             this.setState(prevState => {
@@ -183,17 +166,24 @@ class GoodPieces extends Component {
             }
         });
     }
+    saveAndscanGoodPieces = (index) => {
+        const currentValues = this.state.jobIndex;
+        console.log(this.state.menus[1].ref.current.value);
+        currentValues.push({index: index, value: this.state.menus[1].ref.current.value});
+        this.setState({ jobIndex: currentValues }, () => {
+            this.scanGoodPieces();
+        });
+    }
+
     scanGoodPieces = () => {
         this.setState(prevState => {
             const menus = [...prevState.menus];
             menus[0].hidden = true;
             menus[1].hidden = true;
-            menus[2].hidden = true;
             return { menus: menus };
         });
 
         const jobs = this.state.jobIndex;
-        console.log(jobs);
         let jobArray = [];
         let piecesArray = [];
         for (let i = 0; i < jobs.length; i++) {
@@ -204,13 +194,28 @@ class GoodPieces extends Component {
         console.log(piecesArray);
         this.props.scanGoodPieces(jobArray, piecesArray);
     }
+    showAndClear = () => {
+        const menu = this.state.menus;
+        menu[0].hidden = false;
+        this.setState({
+            menus: menu,
+            newOrderMessage: '',
+            newOrders: [],
+            interval: null,
+        }, () => {
+            this.updateMenus();
+        });
+    }
     render() { 
         return (
-            <Menu 
-                menus={this.state.menus}
-                buttons={this.state.buttons}
-                numPieces={this.state.numPieces}
-            />
+            <>
+                <button className='action' onClick={this.showAndClear} disabled={this.state.buttons[0].disabled}>Good Pieces</button>
+                <Menu 
+                    menus={this.state.menus}
+                    buttons={this.state.buttons}
+                    numPieces={this.state.numPieces}
+                />
+            </>
         );
     }
 }
