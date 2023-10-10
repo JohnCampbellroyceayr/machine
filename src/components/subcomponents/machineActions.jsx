@@ -121,7 +121,7 @@ class Actions extends Component {
                     <div>
                         Operation successful, press the OK button to accept.
                     </div>
-                    <button className='pick-menu' onClick={() => {this.closeApplication()}}>OK</button>
+                    <button className='pick-menu' onClick={() => {this.closeApplication()}} ref={this.state.menu.ref}>OK</button>
                 </div>
             );
         }
@@ -133,8 +133,11 @@ class Actions extends Component {
             menu.text = text;
             return { menu: menu };
         }, () => {
-            if (status.includes("Message")) {
+            try {
                 this.state.menu.ref.current.focus();
+            }
+            catch {
+                
             }
         });
     }
