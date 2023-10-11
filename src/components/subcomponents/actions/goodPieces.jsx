@@ -5,10 +5,12 @@ class GoodPieces extends Component {
         menus: [
             {id: 0, text: null, class: 'default', hidden: true},
             {id: 1, text: null, class: 'default', hidden: true, ref: React.createRef()},
+            {id: 2, text: null, class: 'default', hidden: true},
         ],
         buttons: [
             {id: 0, class: 'none', text: "Yes"},
             {id: 1, class: 'none', text: "Yes"},
+            {id: 2, class: 'none', text: "Yes"},
         ],
         setupMenus: [
         ],
@@ -57,6 +59,27 @@ class GoodPieces extends Component {
             return { menus: menus};
         });
     }
+    updateAndShowRemoveJobMenu = (jobIndex) => {
+        console.log("object");
+        const job = this.props.jobs[jobIndex];
+        const currentGoodPieces = this.props.goodPieces[jobIndex];
+        const requiredPieces = this.props.requiredPieces[jobIndex];
+        const numPiecesMenuIndex = 1;
+        const newGoodPieces = this.state.menus[numPiecesMenuIndex].ref.current.value;
+        console.log(newGoodPieces);
+        if (parseInt(currentGoodPieces) + parseInt(newGoodPieces) >= requiredPieces) {
+            this.showMenu(numPiecesMenuIndex);
+        }
+        else {
+            console.log("job");
+            // this.saveAndscanGoodPieces(jobIndex);
+        }
+        // const yesBtn = (<button onClick={this.removeJob}>Yes</button>)
+        // const noBtn = (<button onClick={this.removeJob}>No</button>)
+    }
+    removeJob = () => {
+
+    }
     renderOrderMenu(index) {
         const machineJobs = (Array.isArray(this.props.jobs)) ? this.props.jobs : [this.props.jobs];
 
@@ -94,8 +117,9 @@ class GoodPieces extends Component {
     }
     handleChangePiecesMenu = (event, index) => {
         if (event.keyCode === 13) {
-           this.enterToRun(event.target.value, index);
-           this.scanGoodPieces();
+        //    this.enterToRun(event.target.value, index);
+        //    this.scanGoodPieces();
+            this.updateAndShowRemoveJobMenu(index);
         }
     }
     menuToSelectPieces = (orderIndex) => {
@@ -110,7 +134,7 @@ class GoodPieces extends Component {
             const order = machineJobs[orderIndex];
             const inputOrder = (<input type='number' defaultValue={defaultNumber} placeholder='number of pieces' onKeyDown={(e) => this.handleChangePiecesMenu(e, orderIndex)} ref={this.state.menus[numPiecesMenuIndex].ref}></input>);
             const backBtn = (<button className='pick-menu' onClick={() => this.showMenu(0)}>Back</button>);
-            const enterBtn = (<button className='pick-menu' onClick={() => this.saveAndscanGoodPieces(orderIndex)}>Scan Good Pieces</button>);
+            const enterBtn = (<button className='pick-menu' onClick={() => this.updateAndShowRemoveJobMenu(orderIndex)}>Scan Good Pieces</button>);
             const html = (
                 <>
                     {order}<br></br>
@@ -142,7 +166,11 @@ class GoodPieces extends Component {
             else {
                 const needed = this.props.requiredPieces;
                 const current = this.props.goodPieces;
-                return needed - current;
+                let difference = needed - current;
+                if (difference < 0) {
+                    difference = 0;
+                }
+                return difference;
             }
         }
     }

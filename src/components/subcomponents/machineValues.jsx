@@ -20,7 +20,8 @@ class machineValues extends Component {
                 id: 0, 
                 text: null, 
                 class: 'default',
-                hidden: true
+                hidden: true,
+                ref: React.createRef()
             },
         ],
         buttons: [
@@ -213,7 +214,7 @@ class machineValues extends Component {
             <div>
                 <br></br>
                 Enter new machine<br></br>
-                <input type='text' onKeyDown={(e) => this.keypressInputField(e)}></input><br></br>
+                <input type='text' onKeyDown={(e) => this.keypressInputField(e)} ref={this.state.menus[0].ref}></input><br></br>
                 or select other machine
                 <div className='chooseOtherEmployeeMenu'>
                     {machineMenu}

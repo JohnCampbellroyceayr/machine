@@ -169,7 +169,7 @@ class Scrap extends Component {
             this.state.menus[numPiecesMenuIndex].ref.current.focus();
         });
     }
-    render() { 
+    render() {
         return (
             <Menu 
                 menus={this.state.menus}
